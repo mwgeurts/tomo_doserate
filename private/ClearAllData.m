@@ -20,8 +20,69 @@ function handles = ClearAllData(handles)
 % with this program. If not, see http://www.gnu.org/licenses/.
 
 % Log action
-if isfield(handles, 'planUID')
+if isfield(handles, 'plan') && ~isempty(handles.plan)
     Event('Clearing patient plan variables from memory');
 else
     Event('Initializing patient plan variables');
 end
+
+% Clear plan data
+handles.db = [];
+handles.build = [];
+handles.planUIDs = [];
+handles.name = [];
+handles.image = [];
+handles.plan = [];
+handles.dose = [];
+
+% Clear patient file string
+set(handles.file_text, 'String', '');
+
+% Clear plan selection
+set(handles.plan_menu, 'Value', 1);
+set(handles.plan_menu, 'String', {''});
+set(handles.plan_menu, 'Enable', 'off');
+set(handles.combine_button, 'Enable', 'off');
+
+% Disable print and export buttons while patient data is unloaded
+set(handles.exporthist_button, 'Enable', 'off');
+set(handles.exporttable_button, 'Enable', 'off');
+set(handles.exportdicom_button, 'Enable', 'off');
+
+% Disabled dose and BED calculation buttons
+set(handles.calc_menu, 'Enable', 'off'); 
+set(handles.calcdose_button, 'Enable', 'off'); 
+set(handles.calcbed_button, 'Enable', 'off'); 
+
+% Hide plots
+if isfield(handles, 'tcsplot')
+    delete(handles.tcsplot);
+else
+    set(allchild(handles.tcs_axes), 'visible', 'off'); 
+    set(handles.tcs_axes, 'visible', 'off');
+    set(handles.tcs_slider, 'visible', 'off');
+    colorbar(handles.tcs_axes,'off');
+end
+set(handles.tcs_button, 'visible', 'off');
+set(handles.alpha, 'visible', 'off');
+
+if isfield(handles, 'histogram')
+    delete(handles.histogram);
+else
+    set(allchild(handles.hist_axes), 'visible', 'off'); 
+    set(handles.hist_axes, 'visible', 'off');
+end
+
+% Reset plot selection menus
+set(handles.tcs_menu, 'Value', 1);
+set(handles.tcs_menu, 'Enable', 'off');
+set(handles.hist_menu, 'Value', 1);
+set(handles.hist_menu, 'Enable', 'off');
+
+% Reset plan info table
+set(handles.plan_table, 'Data', cell(12,2));
+set(handles.plan_table, 'Enable', 'off');
+
+% Reset structure table
+set(handles.struct_table, 'Data', cell(20,8));
+set(handles.struct_table, 'Enable', 'off');

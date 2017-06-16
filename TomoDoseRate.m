@@ -22,7 +22,7 @@ function varargout = TomoDoseRate(varargin)
 
 % Edit the above text to modify the response to help TomoDoseRate
 
-% Last Modified by GUIDE v2.5 16-Jun-2017 09:39:19
+% Last Modified by GUIDE v2.5 16-Jun-2017 13:53:39
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -58,7 +58,7 @@ warning('off','all');
 handles.output = hObject;
 
 % Set version_text handle
-handles.version_text = '0.1';
+handles.version = '0.1';
 
 % Determine path of current application
 [path, ~, ~] = fileparts(mfilename('fullpath'));
@@ -74,7 +74,7 @@ handles.versionInfo = LoadVersionInfo;
 
 % Store program and MATLAB/etc version_text information as a string cell array
 string = {'TomoTherapy Dose Rate/BED Calculator'
-    sprintf('Version: %s (%s)', handles.version_text, handles.versionInfo{6});
+    sprintf('Version: %s (%s)', handles.version, handles.versionInfo{6});
     sprintf('Author: Mark Geurts <mark.w.geurts@gmail.com>');
     sprintf('MATLAB Version: %s', handles.versionInfo{2});
     sprintf('MATLAB License Number: %s', handles.versionInfo{3});
@@ -90,6 +90,10 @@ string = sprintf('%s\n', separator, string{:}, separator);
 % Log information
 Event(string, 'INIT');
 
+% Initialize data handles
+Event('Initializing data variables');
+handles = ClearAllData(handles);
+
 % Log action
 Event('Loading submodules');
 
@@ -103,17 +107,62 @@ Event('Loading configuration options');
 handles = ParseConfigOptions(handles, 'config.txt');
 
 % Set version_text UI text
-set(handles.version_text, 'String', sprintf('Version %s', handles.version_text));
+set(handles.version_text, 'String', sprintf('Version %s', handles.version));
 
+% Set BED plot options
+options = UpdateBEDmodel();
+set(handles.model_menu, 'String', options);
 
+% Set TCS plot options
+options = UpdateDoseDisplay();
+set(handles.tcs_menu, 'String', options);
 
+% Set results plot options
+options = UpdateHistogram();
+set(handles.hist_menu, 'String', options);
 
+% Set dose calculator options
+options = {'Standalone GPU Calculator'};
+set(handles.calc_menu, 'String', options);
+
+% Set BED model default
+set(handles.model_menu, 'Value', 1);
+handles = UpdateBEDmodel(handles);
+
+% Set dose calculator default
+if isfield(handles.config, 'DEFAULT_CALC_METHOD')
+    set(handles.calc_menu, 'Value', ...
+        str2double(handles.config.DEFAULT_CALC_METHOD));
+else
+    set(handles.calc_menu, 'Value', 1);
+end
+
+% Clear temporary variables
+clear options;
+
+% Configure Dose Calculation
+handles = SetDoseCalculation(hObject, handles);
+
+% If an atlas file is specified in the config file
+if isfield(handles.config, 'ATLAS_FILE')
+    
+    % Attempt to load the atlas
+    handles.atlas = LoadAtlas(handles.config.ATLAS_FILE);
+    
+% Otherwise, declare an empty atlas
+else
+    handles.atlas = cell(0);
+end
+
+% Report initilization status
+Event(['Initialization completed successfully. Start by selecting a ', ...
+    'patient archive.']);
 
 % Update handles structure
 guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function varargout = TomoDoseRate_OutputFcn(hObject, eventdata, handles) 
+function varargout = TomoDoseRate_OutputFcn(~, ~, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version_text of MATLAB
@@ -122,248 +171,437 @@ function varargout = TomoDoseRate_OutputFcn(hObject, eventdata, handles)
 % Get default command line output from handles structure
 varargout{1} = handles.output;
 
-
-% --- Executes on button press in exporthist_button.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function exporthist_button_Callback(hObject, eventdata, handles)
 % hObject    handle to exporthist_button (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
-% --- Executes on button press in exporttable_button.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function exporttable_button_Callback(hObject, eventdata, handles)
 % hObject    handle to exporttable_button (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
-% --- Executes on selection change in hist_menu.
-function hist_menu_Callback(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function hist_menu_Callback(hObject, ~, handles)
 % hObject    handle to hist_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: contents = cellstr(get(hObject,'String')) returns hist_menu contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from hist_menu
+% Execute UpdateHistogram
+handles = UpdateHistogram(handles);
+  
+% Update handles structure
+guidata(hObject, handles);
 
-
-% --- Executes during object creation, after setting all properties.
-function hist_menu_CreateFcn(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function hist_menu_CreateFcn(hObject, ~, ~)
 % hObject    handle to hist_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+% Popupmenu controls usually have a white background on Windows.
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-% --- Executes on slider movement.
-function tcs_slider_Callback(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function tcs_slider_Callback(hObject, ~, handles)
 % hObject    handle to tcs_slider (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'Value') returns position of slider
-%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+% Update plot
+handles.tcsplot.Update('slice', round(get(hObject, 'Value')));
 
+% Update handles structure
+guidata(hObject, handles);
 
-% --- Executes during object creation, after setting all properties.
-function tcs_slider_CreateFcn(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function tcs_slider_CreateFcn(hObject, ~, ~)
 % hObject    handle to tcs_slider (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: slider controls usually have a light gray background.
-if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+% Slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor',[.9 .9 .9]);
 end
 
-
-% --- Executes on button press in tcs_button.
-function tcs_button_Callback(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function tcs_button_Callback(hObject, ~, handles)
 % hObject    handle to tcs_button (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Based on current tcsview handle value
+switch handles.tcsview
+    
+    % If current view is transverse
+    case 'T'
+        handles.tcsview = 'C';
+        Event('Updating viewer to Coronal');
+        
+    % If current view is coronal
+    case 'C'
+        handles.tcsview = 'S';
+        Event('Updating viewer to Sagittal');
+        
+    % If current view is sagittal
+    case 'S'
+        handles.tcsview = 'T';
+        Event('Updating viewer to Transverse');
+end
 
+% Re-initialize image viewer with new T/C/S value
+handles.tcsplot.Initialize('tcsview', handles.tcsview);
 
-function alpha_Callback(hObject, eventdata, handles)
+% Update handles structure
+guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function alpha_Callback(hObject, ~, handles)
 % hObject    handle to alpha (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of alpha as text
-%        str2double(get(hObject,'String')) returns contents of alpha as a double
+% If the string contains a '%', parse the value
+if ~isempty(strfind(get(hObject, 'String'), '%'))
+    value = sscanf(get(hObject, 'String'), '%f%%');
+    
+% Otherwise, attempt to parse the response as a number
+else
+    value = str2double(get(hObject, 'String'));
+end
 
+% Bound value to [0 100]
+value = max(0, min(100, value));
 
-% --- Executes during object creation, after setting all properties.
-function alpha_CreateFcn(hObject, eventdata, handles)
+% Log event
+Event(sprintf('Dose transparency set to %0.0f%%', value));
+
+% Update string with formatted value
+set(hObject, 'String', sprintf('%0.0f%%', value));
+
+% Update viewer with current slice and transparency value
+handles.tcsplot.Update('alpha', value/100);
+
+% Clear temporary variable
+clear value;
+
+% Update handles structure
+guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function alpha_CreateFcn(hObject, ~, ~)
 % hObject    handle to alpha (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+% Edit controls usually have a white background on Windows.
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-% --- Executes on selection change in tcs_menu.
-function tcs_menu_Callback(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function tcs_menu_Callback(hObject, ~, handles)
 % hObject    handle to tcs_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: contents = cellstr(get(hObject,'String')) returns tcs_menu contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from tcs_menu
+% Execute UpdateDoseDisplay
+handles = UpdateDoseDisplay(handles);
+  
+% Update handles structure
+guidata(hObject, handles);
 
-
-% --- Executes during object creation, after setting all properties.
-function tcs_menu_CreateFcn(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function tcs_menu_CreateFcn(hObject, ~, ~)
 % hObject    handle to tcs_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+% Popupmenu controls usually have a white background on Windows.
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-% --- Executes on selection change in model_menu.
-function model_menu_Callback(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function model_menu_Callback(hObject, ~, handles)
 % hObject    handle to model_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: contents = cellstr(get(hObject,'String')) returns model_menu contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from model_menu
+% Execute UpdateBEDmodel
+handles = UpdateBEDmodel(handles);
+  
+% Update handles structure
+guidata(hObject, handles);
 
-
-% --- Executes during object creation, after setting all properties.
-function model_menu_CreateFcn(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function model_menu_CreateFcn(hObject, ~, ~)
 % hObject    handle to model_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+% Popupmenu controls usually have a white background on Windows.
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-% --- Executes on button press in calcbed_button.
-function calcbed_button_Callback(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function calcbed_button_Callback(hObject, ~, handles)
 % hObject    handle to calcbed_button (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log action
+Event('Executing CalculateBED');
 
+% Execute CalculateBED()
+handles = CalculateBED(handles);
 
-function file_text_Callback(hObject, eventdata, handles)
+% Update handles structure
+guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function file_text_Callback(hObject, ~, handles)
 % hObject    handle to file_text (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of file_text as text
-%        str2double(get(hObject,'String')) returns contents of file_text as a double
+% Reset with path/name, or clear if empty
+if isfield(handles, 'name') && ~isempty(handles.name)
+    set(hObject, 'String', fullfile(handles.path, handles.name));
+else
+    set(hObject, 'String', '');
+end
 
-
-% --- Executes during object creation, after setting all properties.
-function file_text_CreateFcn(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function file_text_CreateFcn(hObject, ~, ~)
 % hObject    handle to file_text (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+% Edit controls usually have a white background on Windows.
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-% --- Executes on button press in browse_button.
-function browse_button_Callback(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function browse_button_Callback(hObject, ~, handles)
 % hObject    handle to browse_button (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log event
+Event('Patient archive browse button selected');
 
-% --- Executes on selection change in plan_menu.
-function plan_menu_Callback(hObject, eventdata, handles)
+% ExecuteLoadPatientArchive
+handles = BrowsePatientArchive(handles);
+
+% Update handles structure
+guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function plan_menu_Callback(hObject, ~, handles)
 % hObject    handle to plan_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: contents = cellstr(get(hObject,'String')) returns plan_menu contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from plan_menu
+% Log selected plan UID
+Event(sprintf('Plan UID %s selected to load', ...
+    handles.planUIDs{get(hObject, 'Value')}));
 
+% Execute SelectPlan
+handles = SelectPlan(handles, get(hObject, 'Value'));
+  
+% Update handles structure
+guidata(hObject, handles);
 
-% --- Executes during object creation, after setting all properties.
-function plan_menu_CreateFcn(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function plan_menu_CreateFcn(hObject, ~, ~)
 % hObject    handle to plan_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+% Popupmenu controls usually have a white background on Windows.
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-% --- Executes on selection change in calc_menu.
-function calc_menu_Callback(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function calc_menu_Callback(hObject, ~, handles)
 % hObject    handle to calc_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: contents = cellstr(get(hObject,'String')) returns calc_menu contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from calc_menu
+% Log change
+Event('Calculation menu option changed');
 
+% Execute SetDoseCalculation
+handles = SetDoseCalculation(hObject, handles);
+  
+% Update handles structure
+guidata(hObject, handles);
 
-% --- Executes during object creation, after setting all properties.
-function calc_menu_CreateFcn(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function calc_menu_CreateFcn(hObject, ~, ~)
 % hObject    handle to calc_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+% Popupmenu controls usually have a white background on Windows.
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-% --- Executes on button press in calcdose_button.
-function calcdose_button_Callback(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function calcdose_button_Callback(hObject, ~, handles)
 % hObject    handle to calcdose_button (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log action
+Event('Executing CalculateDoseRate');
 
-% --- Executes on button press in combine_button.
+% Execute CalculateDoseRate()
+handles.rate = CalculateDoseRate('image', handles.image, 'plan', ...
+    handles.plan, 'mask', handles.dose.data > ...
+    str2double(handles.config.DOSE_FX_THRESHOLD_GY), 'threshold', ...
+    str2double(handles.config.DOSE_ACCUM_THRESHOLD_GY));
+
+% Log completion
+Event(['Dose rates have now been calculated. You may now proceed to ', ...
+    'compute BED histograms for each structure.']);
+
+% Enable calculate BED button
+set(handles.calcbed_button, 'Enable', 'on');
+
+% Update handles structure
+guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function combine_button_Callback(hObject, eventdata, handles)
 % hObject    handle to combine_button (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
-% --- Executes on button press in clear_button.
-function clear_button_Callback(hObject, eventdata, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function clear_button_Callback(hObject, ~, handles)
 % hObject    handle to clear_button (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Execute clear all data to clear all variables
+handles = ClearAllData(handles);
 
-% --- Executes on button press in exportdicom_button.
+% Update handles structure
+guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function exportdicom_button_Callback(hObject, eventdata, handles)
 % hObject    handle to exportdicom_button (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function params_table_CellEditCallback(hObject, ~, handles)
+% hObject    handle to params_table (see GCBO)
+% eventdata  structure with the following fields
+%	Indices: row and column indices of the cell(s) edited
+%	PreviousData: previous data for the cell(s) edited
+%	EditData: string(s) entered by the user
+%	NewData: EditData or its converted form set on the Data property. Empty 
+%       if Data was not changed
+%	Error: error string when failed to convert EditData to appropriate 
+%       value for Data
+% handles    structure with handles and user data (see GUIDATA)
+
+% Execute UpdateBEDmodel
+handles = UpdateBEDmodel(handles);
+
+% Update handles structure
+guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function struct_table_CellEditCallback(hObject, eventdata, handles)
+% hObject    handle to params_table (see GCBO)
+% eventdata  structure with the following fields
+%	Indices: row and column indices of the cell(s) edited
+%	PreviousData: previous data for the cell(s) edited
+%	EditData: string(s) entered by the user
+%	NewData: EditData or its converted form set on the Data property. Empty 
+%       if Data was not changed
+%	Error: error string when failed to convert EditData to appropriate 
+%       value for Data
+% handles    structure with handles and user data (see GUIDATA)
+
+% Get current data
+data = get(hObject, 'Data');
+    
+% If display value was changed
+if eventdata.Indices(2) == 2
+
+    % Update dose plot if it is displayed
+    if get(handles.tcs_menu, 'Value') > 1 && ...
+            strcmp(get(handles.tcs_slider, 'visible'), 'on')
+
+        % Update display
+        handles.tcsplot.Update('structuresonoff', data);
+    end
+    
+    % Update edited Dx/Vx statistic
+    handles.dvh.UpdatePlot('data', data);
+
+% Otherwise, if alpha/beta was changed and differs
+elseif eventdata.Indices(2) == 3 && ~isempty(eventdata.NewData)
+
+    % Clear all BED data
+    data(eventdata.Indices(1), 5:end) = cell(1, size(data,2)-4);
+    set(hObject, 'Data', data);
+end
+% Clear temporary variable
+clear data;
+
+% Update handles structure
+guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function figure1_CloseRequestFcn(hObject, ~, ~) %#ok<*DEFNU>
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Log event
+Event('Closing the Tomo Dose Rate Calculator application');
+
+% Retrieve list of current timers
+timers = timerfind;
+
+% If any are active
+if ~isempty(timers)
+    
+    % Stop and delete any timers
+    stop(timers);
+    delete(timers);
+end
+
+% Clear temporary variables
+clear timers;
+
+% Delete(hObject) closes the figure
+delete(hObject);

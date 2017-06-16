@@ -55,7 +55,8 @@ clear c i fid;
 Event(['Read ', filename, ' to end of file']);
 
 % Default folder path when selecting input files
-if strcmpi(config.DEFAULT_PATH, 'userpath')
+if ~isfield(config, 'DEFAULT_PATH') || ...
+        strcmpi(config.DEFAULT_PATH, 'userpath')
     handles.path = userpath;
 else
     handles.path = config.DEFAULT_PATH;
@@ -63,11 +64,19 @@ end
 Event(['Default file path set to ', handles.path]);
 
 % Set the initial image view orientation to Transverse (T)
-handles.tcsview = config.DEFAULT_IMAGE_VIEW;
+if isfield(config, 'DEFAULT_IMAGE_VIEW')
+    handles.tcsview = config.DEFAULT_IMAGE_VIEW;
+else
+    handles.tcsview = 'T';
+end
 Event(['Default dose view set to ', config.DEFAULT_IMAGE_VIEW]);
 
 % Set the default transparency
-set(handles.alpha, 'String', config.DEFAULT_TRANSPARENCY);
+if isfield(config, 'DEFAULT_IMAGE_VIEW')
+    set(handles.alpha, 'String', config.DEFAULT_TRANSPARENCY);
+else
+    set(handles.alpha, 'String', '30%');
+end
 Event(['Default dose view transparency set to ', ...
     config.DEFAULT_TRANSPARENCY]);
 
