@@ -1,0 +1,6 @@
+*.m~
+GPU/
+log.txt
+ganymed-ssh2*
+.smb*
+.DS_STORE
