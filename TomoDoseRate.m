@@ -364,10 +364,10 @@ function calcbed_button_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Log action
-Event('Executing CalculateBED');
+Event('Executing CalcBED');
 
-% Execute CalculateBED()
-handles = CalculateBED(handles);
+% Execute CalcBED()
+handles = CalcBED(handles);
 
 % Update handles structure
 guidata(hObject, handles);
@@ -474,10 +474,10 @@ function calcdose_button_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Log action
-Event('Executing CalculateDoseRate');
+Event('Executing CalcDoseRate');
 
 % Execute CalculateDoseRate()
-handles.rate = CalculateDoseRate('image', handles.image, 'plan', ...
+handles.rate = CalcDoseRate('image', handles.image, 'plan', ...
     handles.plan, 'mask', handles.dose.data / handles.plan.fractions > ...
     handles.config.DOSE_FX_THRESHOLD_GY, 'threshold', ...
     handles.config.DOSE_ACCUM_THRESHOLD_GY, 'modelfolder', ...

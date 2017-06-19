@@ -1,6 +1,6 @@
-function rate = CalculateDoseRate(varargin)
-% CalculateDoseRates is called by TomoDoseRate to compute the dose from
-% each projection in a TomoTherapy plan. The resulting differential dose is
+function rate = CalcDoseRate(varargin)
+% CalcDoseRate is called by TomoDoseRate to compute the dose from each 
+% projection in a TomoTherapy plan. The resulting differential dose is
 % stored in a sparse matrix and returned as the structure rate. The indices
 % of each voxel computed, as well as projections is also included in the
 % structure.
