@@ -63,7 +63,7 @@ else
 end
 Event(['Default file path set to ', handles.path]);
 
-% Set the initial image view orientation to Transverse (T)
+% Check for the initial image view orientation to Transverse (T)
 if isfield(config, 'DEFAULT_IMAGE_VIEW')
     handles.tcsview = config.DEFAULT_IMAGE_VIEW;
 else
@@ -71,7 +71,7 @@ else
 end
 Event(['Default dose view set to ', config.DEFAULT_IMAGE_VIEW]);
 
-% Set the default transparency
+% Check for default transparency
 if isfield(config, 'DEFAULT_IMAGE_VIEW')
     set(handles.alpha, 'String', config.DEFAULT_TRANSPARENCY);
 else
@@ -79,6 +79,41 @@ else
 end
 Event(['Default dose view transparency set to ', ...
     config.DEFAULT_TRANSPARENCY]);
+
+% Check for fraction dose threshold
+if isfield(config, 'DOSE_FX_THRESHOLD_GY')
+    config.DOSE_FX_THRESHOLD_GY = str2double(config.DOSE_FX_THRESHOLD_GY);
+else
+    config.DOSE_FX_THRESHOLD_GY = 0.1;
+end
+Event(sprintf('Fraction dose threshold set to %0.3f Gy', ...
+    config.DOSE_FX_THRESHOLD_GY));
+
+% Check for accumulation threshold
+if isfield(config, 'DOSE_ACCUM_THRESHOLD_GY')
+    config.DOSE_ACCUM_THRESHOLD_GY = ...
+        str2double(config.DOSE_ACCUM_THRESHOLD_GY);
+else
+    config.DOSE_ACCUM_THRESHOLD_GY = 0.001;
+end
+Event(sprintf('Dose rate accumulation threshold set to %0.3f Gy/sec', ...
+    config.DOSE_ACCUM_THRESHOLD_GY));
+
+% Check for moving average
+if isfield(config, 'RUNNING_AVG_SEC')
+    config.RUNNING_AVG_SEC = str2double(config.RUNNING_AVG_SEC);
+else
+    config.RUNNING_AVG_SEC = 60;
+end
+Event(sprintf('Dose rate moving average set to %0.3f seconds', ...
+    config.RUNNING_AVG_SEC));
+
+% Check for downsample factor
+if isfield(config, 'DOWNSAMPLE_FACTOR')
+    config.DOWNSAMPLE_FACTOR = str2double(config.DOWNSAMPLE_FACTOR);
+else
+    config.DOWNSAMPLE_FACTOR = 4;
+end
 
 % Store all config options to handles.config
 handles.config = config;
