@@ -86,3 +86,6 @@ set(handles.plan_table, 'Enable', 'off');
 % Reset structure table
 set(handles.struct_table, 'Data', cell(20,8));
 set(handles.struct_table, 'Enable', 'off');
+
+% Change save button to load
+set(handles.loadmat_button, 'String', 'Load Stored Dose Rate');

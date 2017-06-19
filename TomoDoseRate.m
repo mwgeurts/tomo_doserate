@@ -22,7 +22,7 @@ function varargout = TomoDoseRate(varargin)
 
 % Edit the above text to modify the response to help TomoDoseRate
 
-% Last Modified by GUIDE v2.5 16-Jun-2017 13:53:39
+% Last Modified by GUIDE v2.5 19-Jun-2017 15:43:11
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -425,7 +425,7 @@ Event(sprintf('Plan UID %s selected to load', ...
 % Execute SelectPlan
 handles = SelectPlan(handles, get(hObject, 'Value'));
   
-% Update handles structure
+% Update handles structuref
 guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -478,9 +478,11 @@ Event('Executing CalculateDoseRate');
 
 % Execute CalculateDoseRate()
 handles.rate = CalculateDoseRate('image', handles.image, 'plan', ...
-    handles.plan, 'mask', handles.dose.data > ...
-    str2double(handles.config.DOSE_FX_THRESHOLD_GY), 'threshold', ...
-    str2double(handles.config.DOSE_ACCUM_THRESHOLD_GY));
+    handles.plan, 'mask', handles.dose.data / handles.plan.fractions > ...
+    handles.config.DOSE_FX_THRESHOLD_GY, 'threshold', ...
+    handles.config.DOSE_ACCUM_THRESHOLD_GY, 'modelfolder', ...
+    handles.config.MODEL_PATH, 'maxmov', handles.config.RUNNING_AVG_SEC, ...
+    'downsample', handles.config.DOWNSAMPLE_FACTOR);
 
 % Log completion
 Event(['Dose rates have now been calculated. You may now proceed to ', ...
@@ -488,6 +490,30 @@ Event(['Dose rates have now been calculated. You may now proceed to ', ...
 
 % Enable calculate BED button
 set(handles.calcbed_button, 'Enable', 'on');
+
+% Change load button to save
+set(handles.loadmat_button, 'String', 'Save Stored Dose Rate');
+
+% Update handles structure
+guidata(hObject, handles);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function loadmat_button_Callback(hObject, ~, handles)
+% hObject    handle to loadmat_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Execute function depending on whether dose rate data exists
+if isfield(handles, 'rate') && ~isempty(handles.rate)
+    
+    % Execute SaveDoseRateFile()
+    handles = SaveDoseRateFile(handles);
+else
+    
+    % Execute LoadDoseRateFile()
+    handles = LoadDoseRateFile(handles);
+end
 
 % Update handles structure
 guidata(hObject, handles);
@@ -605,3 +631,4 @@ clear timers;
 
 % Delete(hObject) closes the figure
 delete(hObject);
+

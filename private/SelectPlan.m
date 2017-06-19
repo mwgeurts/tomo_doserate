@@ -183,5 +183,6 @@ if isfield(handles, 'calcDose') && handles.calcDose == 1
     Event('Plan load completed, enabling dose calculation');
 
     % Enable calculation
+    set(handles.calc_menu, 'Enable', 'on');
     set(handles.calcdose_button, 'Enable', 'on');
 end
