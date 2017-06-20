@@ -148,9 +148,9 @@ end
     ind2sub(size(image.data), 1:numel(image.data));
 
 % Initialize return structure sparse matrix, estimating each masked voxel 
-% to be irradiated across 100 projections
+% to be irradiated across 20 projections
 n = size(plan.sinogram, 2);
-rate.sparse = spalloc(numel(image.data), n, length(find(rate.mask)) * 100);
+rate.sparse = spalloc(numel(image.data), n, length(find(rate.mask)) * 20);
 
 % Store the per fraction scale
 rate.scale = plan.scale / plan.fractions;
