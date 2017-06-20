@@ -1,7 +1,8 @@
 function rate = CalcDoseRate(varargin)
-% CalcDoseRate is called by TomoDoseRate to compute the dose from each 
-% projection in a TomoTherapy plan. The resulting differential dose is
-% stored in a sparse matrix and returned as the structure rate. The indices
+% CalcDoseRate compute the dose from each projection in a TomoTherapy plan 
+% by calling the CalcDose function individually for each projection and 
+% dividing by the projection time. The resulting differential dose is 
+% stored in a sparse matrix and returned as the structure rate. The indices 
 % of each voxel computed, as well as projections is also included in the
 % structure.
 %
@@ -36,6 +37,9 @@ function rate = CalcDoseRate(varargin)
 %               of the dose to a given voxel at a given projection.
 %   indices:    a 2D matrix of size 3 x n containing the voxel indices (x, 
 %               y, and z) of each voxel in the sparse matrix.
+%   time:       a vector of length m, indicating the elapsed time (from the
+%               start of irradiation) of each row in the sparse array in 
+%               seconds. 
 %   scale:      a double indicating the projection time, in seconds.
 %   mask:       if provided, the mask used for dose rate calculation.
 %               Otherwise, a 3D array of ones the same size as image.data.
@@ -68,6 +72,9 @@ function rate = CalcDoseRate(varargin)
 % 
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
+
+% Define defaults
+modelfolder = './GPU';
 
 % Loop through variable input arguments
 for i = 1:2:length(varargin)
@@ -112,11 +119,6 @@ if CalcDose() == 0
     end
 end
 
-% If a model path was not provided, assume './GPU'
-if ~exist('modelfolder', 'var')
-    modelfolder = './GPU';
-end
-
 % If a mask was not provided, create one
 if ~isfield(rate, 'mask')
     rate.mask = ones(size(image.data));
@@ -150,8 +152,11 @@ end
 n = size(plan.sinogram, 2);
 rate.sparse = spalloc(numel(image.data), n, length(find(rate.mask)) * 100);
 
-% Store the plan scale
-rate.scale = plan.scale;
+% Store the per fraction scale
+rate.scale = plan.scale / plan.fractions;
+
+% Store the time vector
+rate.time = (0:(n-1)) * rate.scale;
 
 % Log beginning of computation and start timer
 if exist('Event', 'file') == 2
@@ -276,5 +281,5 @@ if exist('Event', 'file') == 2
 end
 
 % Clear temporary variables
-clear plan image modelfolder maxmov thresh dose t n i d r;
+clear plan modplan image modelfolder maxmov thresh dose t n i d r;
 

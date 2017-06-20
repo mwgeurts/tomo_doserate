@@ -366,8 +366,38 @@ function calcbed_button_Callback(hObject, ~, handles)
 % Log action
 Event('Executing CalcBED');
 
-% Execute CalcBED()
-handles = CalcBED(handles);
+% If a dose rate has been calculated
+if isfield(handles, 'rate') && ~isempty(handles.rate)
+    
+    % Inject inter-beam delays into time vector
+    handles.rate = InjectBeamDelay(handles.rate, handles.plan, ...
+        handles.delay);
+    
+    % Execute code block based on display GUI item value
+    switch get(handles.model_menu, 'Value')
+
+        % Bi-exponential BED model
+        case 1
+            
+            % Store function handle
+            fcn = @BiExponential;
+            
+            % Store model parameters
+            params = struct('ab', handles.ab, 'half', ...
+                handles.half, 'prop', handles.prop); 
+    end
+        
+    % Execute CalcBED()
+    handles.bed = CalcBED('rate', handles.rate, 'model', fcn, ...
+        'params', params, 'repeat', handles.repeat, 'structures', ...
+        handles.image.structures);
+    
+    % Update stats table
+    
+    
+    % Update plot
+    
+end
 
 % Update handles structure
 guidata(hObject, handles);
