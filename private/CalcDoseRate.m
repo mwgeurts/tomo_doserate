@@ -240,7 +240,7 @@ for i = 2:n
 end
 
 % Compute the RMS error
-rate.error = sqrt(mean((dose - sum(rate.sparse, 2)) .^ 2));
+rate.error = sqrt(mean((dose' - sum(rate.sparse, 2)) .^ 2));
 if exist('Event', 'file') == 2
     Event('Dose rate integral RMS error = %0.3f Gy');
 end
@@ -254,7 +254,7 @@ rate.sparse = rate.sparse ./ rate.scale;
 
 % Compute the maximum dose rates
 Event('Computing maximum dose rates');
-rate.max = reshape(max(rate.sparse, [], 2), size(image.data,1), ...
+rate.max = reshape(full(max(rate.sparse, [], 2)), size(image.data,1), ...
     size(image.data, 2), size(image.data,3));
 
 % Compute the running average maximum dose rate (if specified)
@@ -264,8 +264,9 @@ if exist('maxmov', 'var')
     Event('Computing maximum dose rates using a %0.3f sec moving average');
 
     % Compute running average
-    rate.maxmov = ...
-        max(maxmov(rate.sparse, floor(maxmov / rate.scale), 2), [], 2);
+    rate.maxmov = reshape(full(max(maxmov(rate.sparse, floor(maxmov / ...
+        rate.scale), 2), [], 2)), size(image.data,1), ...
+        size(image.data, 2), size(image.data,3));
 end
 
 % Update waitbar
