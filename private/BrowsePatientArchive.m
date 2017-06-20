@@ -48,6 +48,9 @@ if ~isequal(handles.name, 0)
     % Log new path
     Event(['Default file path updated to ', handles.path]);
     
+    % Clear all
+    handles = ClearAllData(handles);
+    
     % Update archive_file text box
     set(handles.file_text, 'String', ...
         fullfile(handles.path, handles.name));
