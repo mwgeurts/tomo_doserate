@@ -368,11 +368,7 @@ Event('Executing CalcBED');
 
 % If a dose rate has been calculated
 if isfield(handles, 'rate') && ~isempty(handles.rate)
-    
-    % Inject inter-beam delays into time vector
-    handles.rate = InjectBeamDelay(handles.rate, handles.plan, ...
-        handles.delay);
-    
+
     % Execute code block based on display GUI item value
     switch get(handles.model_menu, 'Value')
 
@@ -382,9 +378,25 @@ if isfield(handles, 'rate') && ~isempty(handles.rate)
             % Store function handle
             fcn = @BiExponential;
             
-            % Store model parameters
-            params = struct('ab', handles.ab, 'half', ...
-                handles.half, 'prop', handles.prop); 
+            % Inject inter-beam delays into time vector
+            handles.rate = InjectBeamDelay(handles.rate, handles.plan, ...
+                handles.delay);
+    
+            % Get table contents
+            t = get(handles.struct_table, 'Data');
+            
+            % Calculate alpha/beta ratio for each voxel
+            ab = SetAlphaBetaRatio('ab', [handles.ab(1) ...
+                handles.ab(1) handles.ab(2)], 'structures', ...
+                handles.image.structures, 'type', t{3,:});
+            
+            % Store remaining model parameters
+            params = horzcat(ab, repmat(handles.half, ...
+                numel(handles.image.data), 1), repmat(handles.prop, ...
+                numel(handles.image.data), 1));
+            
+            % Clear temporary variables
+            clear t ab;
     end
         
     % Execute CalcBED()
@@ -511,8 +523,7 @@ handles.rate = CalcDoseRate('image', handles.image, 'plan', ...
     handles.plan, 'mask', handles.dose.data / handles.plan.fractions > ...
     handles.config.DOSE_FX_THRESHOLD_GY, 'threshold', ...
     handles.config.DOSE_ACCUM_THRESHOLD_GY, 'modelfolder', ...
-    handles.config.MODEL_PATH, 'maxmov', handles.config.RUNNING_AVG_SEC, ...
-    'downsample', handles.config.DOWNSAMPLE_FACTOR);
+    handles.config.MODEL_PATH, 'downsample', handles.config.DOWNSAMPLE_FACTOR);
 
 % Log completion
 Event(['Dose rates have now been calculated. You may now proceed to ', ...

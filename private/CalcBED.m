@@ -13,11 +13,11 @@ function bed = CalcBED(varargin)
 %                   used.
 %   model:          a function handle to the function containing the 
 %                   biological model. See BiExponential() for an example.
-%   *params:        a variable containing the model parameters to get sent 
-%                   to the model function. Can be an array, cell array, or
-%                   structure. If not provided, or left empty, the model 
-%                   function will be called with only the rate fields as 
-%                   inputs.
+%   *params:        A vector of model parameters to get passed to the model 
+%                   function. Alternatively, params can be a 2D array of 
+%                   length n x m, where n is the number of voxels defined 
+%                   in the dose rate structure and m is the number of
+%                   parameters. This allows spatially variant parameters.
 %   *repeat:        optional integer indicating the number of times to 
 %                   repeat the dose rate calculation. Can be used to 
 %                   simulate multiple  back to back deliveries of the same 
@@ -109,6 +109,14 @@ for j = 2:repeat
         time((1+(j-1)*length(rate.time)):(j*length(rate.time))) + ...
         (j-1) * (max(rate.time) + rate.scale);
 end
+time = [0 time];
+
+% Repeat parameters, if not already repeated
+if exist('params', 'var') && size(params, 1) == 1 
+   params = repmat(params, n, 1); 
+elseif exist('params', 'var') && size(params, 2) == 1
+   params = repmat(params', n, 1); 
+end
 
 % Loop through each voxel
 for i = 1:n
@@ -130,7 +138,7 @@ for i = 1:n
         % Execute model function for variable dose rate
         if exist('params', 'var')
             bed.variable(rate.indices(1,i), rate.indices(2,i), ...
-                rate.indices(3,i)) = model(drate, time, params);
+                rate.indices(3,i)) = model(drate, time, params(n,:));
         else
             bed.variable(rate.indices(1,i), rate.indices(2,i), ...
                 rate.indices(3,i)) = model(drate, time);
@@ -139,25 +147,25 @@ for i = 1:n
         % Execute model function assuming continuous delivery
         if exist('params', 'var')
             bed.continuous(rate.indices(1, i), rate.indices(2, i), ...
-                rate.indices(3, i)) = model(ones(length(time), 1) * ...
-                sum(drate) / length(time), time, params);
+                rate.indices(3, i)) = model(ones(length(drate), 1) * ...
+                sum(drate) / length(drate), time, params(n,:));
         else
             bed.continuous(rate.indices(1,i), rate.indices(2,i), ...
-                rate.indices(3,i)) = model(ones(length(time),1) * ...
-                sum(drate) / length(time), time);
+                rate.indices(3,i)) = model(ones(length(drate),1) * ...
+                sum(drate) / length(drate), time);
         end
         
         % Execute model function assuming instantaneous delivery
         if exist('params', 'var')
             bed.instant(rate.indices(1,i), rate.indices(2,i), ...
-                rate.indices(3,i)) = model(sum(drate) * plan.scale, 0, params);
+                rate.indices(3,i)) = model(sum(drate) * ...
+                plan.scale, 0, params(n,:));
         else
             bed.instant(rate.indices(1,i), rate.indices(2,i), ...
                 rate.indices(3,i)) = model(sum(drate) * plan.scale, 0);
         end
     end
 end
-
 
 % Loop through each structure
 if exist('structures', 'var')
