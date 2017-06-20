@@ -38,7 +38,7 @@ function rate = CalcDoseRate(varargin)
 %   indices:    a 2D matrix of size 3 x n containing the voxel indices (x, 
 %               y, and z) of each voxel in the sparse matrix.
 %   time:       a vector of length m, indicating the elapsed time (from the
-%               start of irradiation) of each row in the sparse array in 
+%               start of irradiation) after each row in the sparse array in 
 %               seconds. 
 %   scale:      a double indicating the projection time, in seconds.
 %   mask:       if provided, the mask used for dose rate calculation.
@@ -156,7 +156,7 @@ rate.sparse = spalloc(numel(image.data), n, length(find(rate.mask)) * 100);
 rate.scale = plan.scale / plan.fractions;
 
 % Store the time vector
-rate.time = (0:(n-1)) * rate.scale;
+rate.time = (1:n) * rate.scale;
 
 % Log beginning of computation and start timer
 if exist('Event', 'file') == 2
@@ -242,7 +242,7 @@ end
 % Compute the RMS error
 rate.error = sqrt(mean((dose' - sum(rate.sparse, 2)) .^ 2));
 if exist('Event', 'file') == 2
-    Event('Dose rate integral RMS error = %0.3f Gy');
+    Event(sprintf('Dose rate integral RMS error = %0.3f Gy', rate.error));
 end
 
 % Compute the average dose rate using cumulative dose
