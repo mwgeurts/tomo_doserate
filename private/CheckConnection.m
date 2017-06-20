@@ -50,7 +50,7 @@ else
     Event('Dose calculation server not available', 'WARN');
 
     % Update calculation status
-    set(handles.calc_status, 'String', 'Status: Disconnected');
+    set(handles.status_text, 'String', 'Status: Disconnected');
     
     % Enable UI controls
     set(handles.calcdose_button, 'Enable', 'off');
