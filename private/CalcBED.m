@@ -1,8 +1,8 @@
 function bed = CalcBED(varargin)
 % CalcBED calculates the Biologically Effecive Dose of a dose volume
 % given a dose rate (calculated by CalcDoseRate) and biological model
-% function handle. If a structure set is provided, this function will also
-% compute the BED for each structure. The return argument is a structure.
+% function handle. In addition to computing the  (provided) variable dose 
+% rate BED, the continuous BED (assuming dose is delivered 
 %
 % The following name/value pairs can be provided as input arguments to this
 % function. Values marked with an asterisk are optional.
@@ -22,10 +22,6 @@ function bed = CalcBED(varargin)
 %                   repeat the dose rate calculation. Can be used to 
 %                   simulate multiple  back to back deliveries of the same 
 %                   plan.
-%   *structures:    optional cell array containing structures to compute 
-%                   statistics for. See LoadStructures in the tomo_extract
-%                   submodule for more information on the contents of this
-%                   cell array.
 %  
 % The following structure fields are returned upon successful completion:
 %
@@ -71,8 +67,6 @@ for i = 1:2:length(varargin)
         params = varargin{i+1};
     elseif strcmpi(varargin{i}, 'repeat')
         repeat = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'structures')
-        structures = varargin{i+1};
     end
 end
 
@@ -159,38 +153,11 @@ for i = 1:n
         if exist('params', 'var')
             bed.instant(rate.indices(1,i), rate.indices(2,i), ...
                 rate.indices(3,i)) = model(sum(drate) * ...
-                plan.scale, 0, params(n,:));
+                plan.scale, [0 1e-10], params(n,:));
         else
             bed.instant(rate.indices(1,i), rate.indices(2,i), ...
-                rate.indices(3,i)) = model(sum(drate) * plan.scale, 0);
+                rate.indices(3,i)) = model(sum(drate) * plan.scale, [0 1e-10]);
         end
-    end
-end
-
-% Loop through each structure
-if exist('structures', 'var')
-    
-    % Store length
-    n = length(structures);
-
-    % Log action
-    Event(sprintf('Calculating BED values for %i structures', n));
-    
-    % Initialize return cell array
-    bed.structures = cell(1, n);
-    
-    % Loop through structures
-    for i = 1:n
-       
-        % Update waitbar
-        if exist('progress', 'var') && ishandle(progress)
-            waitbar(i/n, progress, 'Calculating Structure BEDs');
-        end
-        
-        
-        
-        
-        
     end
 end
 
