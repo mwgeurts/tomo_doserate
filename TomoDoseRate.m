@@ -22,7 +22,7 @@ function varargout = TomoDoseRate(varargin)
 
 % Edit the above text to modify the response to help TomoDoseRate
 
-% Last Modified by GUIDE v2.5 19-Jun-2017 15:43:11
+% Last Modified by GUIDE v2.5 20-Jun-2017 13:13:13
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -661,4 +661,3 @@ clear timers;
 
 % Delete(hObject) closes the figure
 delete(hObject);
-
