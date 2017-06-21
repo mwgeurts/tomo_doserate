@@ -21,6 +21,9 @@ function handles = SelectPlan(handles, value)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
+% Clear dose rate data
+handles = ClearDoseRateData(handles);
+
 % Start waitbar
 progress = waitbar(0, 'Loading CT Image');
 
