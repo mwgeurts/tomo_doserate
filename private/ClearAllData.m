@@ -30,7 +30,6 @@ end
 handles.db = [];
 handles.build = [];
 handles.planUIDs = [];
-handles.name = [];
 handles.image = [];
 handles.plan = [];
 handles.dose = [];
