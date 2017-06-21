@@ -31,7 +31,9 @@ function rate = CalcDoseRate(varargin)
 % The following structure fields are returned upon successful completion:
 %
 %   sparse:     a 2D sparse matrix of size m x n, where m is the number of
-%               plan projections and n is the number of voxels that a dose
+%               plan projections plus the number of beams (an extra 
+%               projection is added between beams to allow beam delays to 
+%               be considered) and n is the number of voxels that a dose
 %               rate was calculated for. The values are the differential 
 %               dose rate in Gy/sec (above a given threshold, if provided) 
 %               of the dose to a given voxel at a given projection.
@@ -147,16 +149,34 @@ end
 [rate.indices(:,1), rate.indices(:,2), rate.indices(:,3)] = ...
     ind2sub(size(image.data), 1:numel(image.data));
 
+% If trimmed lengths aren't computed
+if ~isfield(plan, 'trimmedLengths')
+    
+    % Initialize array
+    l = zeros(1, length(plan.startTrim));
+    
+    % Compute them
+    for i = 1:length(plan.startTrim)
+        l(i) = plan.startTrim(i) - plan.stopTrim(i) + 1;
+    end
+else
+    l = plan.trimmedLengths;
+end
+
+% Store cumulative sum of trimmed lengths
+l = cumsum(l);
+
 % Initialize return structure sparse matrix, estimating each masked voxel 
-% to be irradiated across 20 projections
+% to be irradiated across 20 projections.
 n = size(plan.sinogram, 2);
-rate.sparse = spalloc(numel(image.data), n, length(find(rate.mask)) * 20);
+rate.sparse = spalloc(numel(image.data), n + length(plan.trimmedLengths), ...
+    length(find(rate.mask)) * 20);
 
 % Store the per fraction scale
 rate.scale = plan.scale / plan.fractions;
 
 % Store the time vector
-rate.time = (1:n) * rate.scale;
+rate.time = (1:(n + length(plan.trimmedLengths))) * rate.scale;
 
 % Log beginning of computation and start timer
 if exist('Event', 'file') == 2
@@ -230,7 +250,7 @@ for i = 2:n
     dose = reshape(d.data .* rate.mask / plan.fractions, 1, []);
     
     % Store dose rates (relative to previous dose) greater than threshold
-    rate.sparse((dose - prevdose) > thresh, i) = ...
+    rate.sparse((dose - prevdose) > thresh, i + find(i <= l, 1) - 1) = ...
         dose((dose - prevdose) > thresh);
     
     % Update previous dose
@@ -272,6 +292,7 @@ end
 % Update waitbar
 if exist('progress', 'var') && ishandle(progress)
     waitbar(1, progress, 'Completed!');
+    close(progress);
 end
 
 % Log dose calculation completion
@@ -282,5 +303,5 @@ if exist('Event', 'file') == 2
 end
 
 % Clear temporary variables
-clear plan modplan image modelfolder maxmov thresh dose t n i d r;
+clear plan modplan image modelfolder maxmov thresh dose t n i d r l;
 
