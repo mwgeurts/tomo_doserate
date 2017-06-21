@@ -115,6 +115,17 @@ else
     config.DOWNSAMPLE_FACTOR = 4;
 end
 
+% Build alpha beta ratios cell array
+if isfield(config, 'ALPHA_BETA_TYPES')
+    handles.ratios = strsplit(config.ALPHA_BETA_TYPES, ',');
+    for i = 1:size(handles.ratios,2)
+        handles.ratios{2,i} = ...
+            str2double(config.(sprintf('ALPHA_BETA_%i', i)));
+    end
+else
+    handles.ratios = {};
+end
+
 % Store all config options to handles.config
 handles.config = config;
 

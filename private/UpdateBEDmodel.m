@@ -69,16 +69,17 @@ switch get(handles.model_menu, 'Value')
             % Update table parameters 
             params = cell(7,2);
             
-            % Add target alpha/beta
-            params{1,1} = 'Early/tumor alpha/beta ratio';
-            if isfield(handles.config, 'ALPHA_BETA_TUMOR_EARLY')
-                params{1,2} = handles.config.ALPHA_BETA_TUMOR_EARLY;
+            % Add tumor/early alpha/beta
+            params{1,1} = [handles.ratios{1,1}, '/', lower(handles.ratios{1,2}), ...
+                ' alpha/beta ratio'];
+            if isfield(handles.config, 'ALPHA_BETA_1')
+                params{1,2} = handles.config.ALPHA_BETA_1;
             end
             
             % Set late alpha/beta ratio
-            params{2,1} = 'Late alpha/beta ratio';
-            if isfield(handles.config, 'ALPHA_BETA_LATE')
-                params{2,2} = handles.config.ALPHA_BETA_LATE;
+            params{2,1} = [handles.ratios{1,3}, ' alpha/beta ratio'];
+            if isfield(handles.config, 'ALPHA_BETA_3')
+                params{2,2} = handles.config.ALPHA_BETA_3;
             end
             
             % Set short repair half life
@@ -120,8 +121,9 @@ switch get(handles.model_menu, 'Value')
         end
         
         % Parse out parameters
-        handles.ab(1) = sscanf(params{1,2}, '%f');
-        handles.ab(2) = sscanf(params{2,2}, '%f');
+        handles.ratios{2,1} = sscanf(params{1,2}, '%f');
+        handles.ratios{2,2} = sscanf(params{1,2}, '%f');
+        handles.ratios{2,3} = sscanf(params{2,2}, '%f');
         handles.half(1) = sscanf(params{3,2}, '%f');
         handles.half(2) = sscanf(params{4,2}, '%f');
         handles.prop = str2double(strsplit(params{5,2}, ':')) / 100;
@@ -147,7 +149,7 @@ switch get(handles.model_menu, 'Value')
             % Display warning
             warndlg('The proportions must sum to 100 and be non-negative');
             
-        elseif ~(handles.ab(1) >= 0 && handles.ab(2) >= 0 && ...
+        elseif ~(handles.ratios{2,1} >= 0 && handles.ratios{2,3} >= 0 && ...
                 handles.half(1) >= 0 && handles.half(2) >= 0)
 
             % Display warning
@@ -162,8 +164,8 @@ switch get(handles.model_menu, 'Value')
         else
             
             % Re-format table
-            params{1,2} = sprintf('%0.1f', handles.ab(1));
-            params{2,2} = sprintf('%0.1f', handles.ab(2));
+            params{1,2} = sprintf('%0.1f', handles.ratios{2,1});
+            params{2,2} = sprintf('%0.1f', handles.ratios{2,3});
             params{3,2} = sprintf('%0.1f hr', handles.half(1));
             params{4,2} = sprintf('%0.1f hr', handles.half(2));
             params{5,2} = sprintf('%0.0f:%0.0f', handles.prop(1)*100, ...
@@ -177,6 +179,10 @@ switch get(handles.model_menu, 'Value')
             % Update plot
             Event('Updating BED plot');
 
+            % Define alpha/beta ratios
+            ab(1) = handles.ratios{2,1};
+            ab(2) = handles.ratios{2,3};
+            
             % Define irradiation time axes (in hours)
             time = 0:0.01:2;
 
@@ -192,14 +198,14 @@ switch get(handles.model_menu, 'Value')
 
             % Compute BEDs (will result in a 4D matrix)
             bed = repmat(reshape(d,1,1,[]), length(handles.half), length(time), 1, ...
-                length(handles.ab)) .* (1 + repmat(g, 1, 1, length(d), length(handles.ab)) .* ...
+                length(ab)) .* (1 + repmat(g, 1, 1, length(d), length(ab)) .* ...
                 repmat(reshape(d,1,1,[]), length(handles.half), length(time), 1, ...
-                length(handles.ab)) ./ repmat(reshape(handles.ab,1,1,1,[]), length(handles.half), ...
+                length(ab)) ./ repmat(reshape(ab,1,1,1,[]), length(handles.half), ...
                 length(time), length(d), 1));
 
             % Compute weighted average of half lives, making BED a 3D matrix
             bed = squeeze(sum(bed .* repmat(handles.prop', 1, length(time), length(d), ...
-                length(handles.ab)), 1));
+                length(ab)), 1));
 
             % Set axes
             axes(handles.bed_axes);
@@ -226,7 +232,7 @@ switch get(handles.model_menu, 'Value')
             end
 
             % Loop through remaining alpha-betas
-            for j = 2:length(handles.ab)
+            for j = 2:length(ab)
 
                 % Loop through alpha-betas
                 for i = 1:length(d)
@@ -258,7 +264,9 @@ switch get(handles.model_menu, 'Value')
 
             % Add axis labels, title
             title({'BED for prolonged delivery', ...
-                'solid = early/tumor, dashed = late'});
+                ['solid = ', lower(handles.ratios{1,1}), '/', ...
+                lower(handles.ratios{1,2}), ', dashed = ', ...
+                lower(handles.ratios{1,3})]});
             xlabel('Duration of single fraction (hours)');
             ylabel('Relative BED');
 
