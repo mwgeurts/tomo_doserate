@@ -1,15 +1,13 @@
-function rate = InjectBeamDelay(rate, plan, delay)
-% InjectBeamDelay adds a given delay between each beam in a calculated dose
-% rate sparse matrix. Upon completion, a modified sparse array structure is
-% returned.
+function time = InjectBeamDelay(time, plan, delay)
+% InjectBeamDelay adds a given delay between each beam in a time vector. 
+% Upon completion, a modified time vector is returned.
 %
 % The following inputs are required:
 %
-%   rate:   structure containing dose rate sparse array. The 'time' field
-%           is modified and returned. See CalcDoseRate() for more 
-%           information on the format of this structure.
-%   plan:   structure containing plan information. The 'NumOfProjections'
-%           field is required. See LoadPlan() for more information.
+%   time:   vector containing 
+%   plan:   structure containing plan information. The 'startTrim' and
+%           'stopTrim' fields are used. See LoadPlan() for more 
+%           information.
 %   delay:  The delay, in seconds, to add between each beam.
 %
 % Author: Mark Geurts, mark.w.geurts@gmail.com
@@ -28,4 +26,34 @@ function rate = InjectBeamDelay(rate, plan, delay)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
+% If delay is zero, return without doing anything
+if delay == 0
+    return;
+end
 
+% If trimmed lengths aren't computed
+if ~isfield(plan, 'trimmedLengths')
+    
+    % Initialize array
+    l = zeros(1, length(plan.startTrim));
+    
+    % Compute them
+    for i = 1:length(plan.startTrim)
+        l(i) = plan.startTrim(i) - plan.stopTrim(i) + 1;
+    end
+else
+    l = plan.trimmedLengths;
+end
+
+% Store cumulative sum of trimmed lengths
+l = cumsum(l+1);
+
+% Loop through each beam
+for i = 1:length(l)
+    
+    % Add delay
+    time(l(i):end) = time(l(i):end) + delay;
+end
+
+% Clear temporary variables
+clear l i;
