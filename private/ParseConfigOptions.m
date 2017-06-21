@@ -84,7 +84,7 @@ Event(['Default dose view transparency set to ', ...
 if isfield(config, 'DOSE_FX_THRESHOLD')
     config.DOSE_FX_THRESHOLD = str2double(config.DOSE_FX_THRESHOLD);
 else
-    config.DOSE_FX_THRESHOLD = 0.1;
+    config.DOSE_FX_THRESHOLD = 0;
 end
 Event(sprintf('Fraction dose threshold set to %0.1f%% of max dose', ...
     config.DOSE_FX_THRESHOLD * 100));
