@@ -84,8 +84,14 @@ elseif str2double(handles.db(1)) >= 2
         handles.planUIDs{value});
 end
 
+% Scale dose to fraction dose
+handles.dose.data = handles.dose.data / handles.plan.fractions;
+
 % Update progress bar
 waitbar(0.8, progress, 'Updating Display');
+
+% Enable load button
+set(handles.loadmat_button, 'Enable', 'on');
 
 % Update parameters table
 handles = UpdatePlanTable(handles);
@@ -155,7 +161,7 @@ handles.tcsplot = ImageViewer('axis', handles.tcs_axes, ...
     sscanf(get(handles.alpha, 'String'), '%f%%')/100, ...
     'structures', handles.image.structures, ...
     'structuresonoff', data, ...
-    'slider', handles.tcs_slider, 'cbar', 'on', 'pixelval', 'off');
+    'slider', handles.tcs_slider, 'cbar', 'on', 'pixelval', 'on');
 
 % Enable TCS/alpha inputs
 set(handles.tcs_button, 'visible', 'on');

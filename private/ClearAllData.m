@@ -39,7 +39,10 @@ set(handles.file_text, 'String', '');
 set(handles.plan_menu, 'Value', 1);
 set(handles.plan_menu, 'String', {''});
 set(handles.plan_menu, 'Enable', 'off');
+
+% Clear options
 set(handles.combine_button, 'Enable', 'off');
+set(handles.loadmat_button, 'Enable', 'off');
 
 % Also execute ClearDoseRateData
 handles = ClearDoseRateData(handles);
