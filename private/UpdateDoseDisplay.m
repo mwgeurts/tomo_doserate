@@ -25,6 +25,11 @@ function varargout = UpdateDoseDisplay(varargin)
 plotoptions = {
     ''
     'Planned Dose (Gy)'
+    'Average Dose Rate (Gy/sec)'
+    'Maximum Dose Rate (Gy/sec)'
+    'Biologically Effective Dose (Gy)'
+    'Instantaneous BED (Gy)'
+    'Continuous Dose BED (Gy)'
 };
 
 % If no input arguments are provided
@@ -84,6 +89,141 @@ switch get(handles.tcs_menu, 'Value')
             Event('Planned dose not displayed as no data exists');
         end
         
+    % Average dose rate display
+    case 3
+        
+        % Log plot selection
+        Event('Average dose rate plot selected');
+        
+        % Check if the planned dose and image are loaded
+        if isfield(handles, 'image') && ...
+                isfield(handles.image, 'data') ...
+                && isfield(handles, 'rate') && ...
+                isfield(handles.dose, 'average')
+            
+            % Calculate scaling factor for average to account for delays
+            % between beams
+            s = handles.rate.time(end) / (handles.rate.time(end) + ...
+                handles.delay/60 * (handles.repeat * ...
+                length(handles.plan.numberOfProjections) - 1));
+            
+            % Re-initialize plot with new overlay data
+            handles.tcsplot.Initialize('overlay', struct('data', ...
+                handles.rate.average * s, 'start', handles.image.start, ...
+                'width', handles.image.width, 'dimensions', ...
+                handles.image.dimensions));
+            
+            % Enable transparency and TCS inputs
+            set(handles.alpha, 'visible', 'on');
+            set(handles.tcs_button, 'visible', 'on');
+        else
+            % Log why plot was not displayed
+            Event('Dose not displayed as no data exists');
+        end
+        
+    % Maximum dose rate display
+    case 4
+        
+        % Log plot selection
+        Event('Maximum dose rate plot selected');
+        
+        % Check if the planned dose and image are loaded
+        if isfield(handles, 'image') && ...
+                isfield(handles.image, 'data') ...
+                && isfield(handles, 'rate') && ...
+                isfield(handles.dose, 'max')
+                
+            % Re-initialize plot with new overlay data
+            handles.tcsplot.Initialize('overlay', struct('data', ...
+                handles.rate.max, 'start', handles.image.start, ...
+                'width', handles.image.width, 'dimensions', ...
+                handles.image.dimensions));
+            
+            % Enable transparency and TCS inputs
+            set(handles.alpha, 'visible', 'on');
+            set(handles.tcs_button, 'visible', 'on');
+        else
+            % Log why plot was not displayed
+            Event('Dose not displayed as no data exists');
+        end
+        
+    % BED display
+    case 5
+        
+        % Log plot selection
+        Event('BED plot selected');
+        
+        % Check if the BED and image are loaded
+        if isfield(handles, 'image') && ...
+                isfield(handles.image, 'data') ...
+                && isfield(handles, 'bed') && ...
+                isfield(handles.bed, 'variable')
+                
+            % Re-initialize plot with new overlay data
+            handles.tcsplot.Initialize('overlay', struct('data', ...
+                handles.bed.variable, 'start', handles.image.start, ...
+                'width', handles.image.width, 'dimensions', ...
+                handles.image.dimensions));
+            
+            % Enable transparency and TCS inputs
+            set(handles.alpha, 'visible', 'on');
+            set(handles.tcs_button, 'visible', 'on');
+        else
+            % Log why plot was not displayed
+            Event('BED not displayed as no data exists');
+        end
+    
+    % Instantaneous BED display
+    case 6
+        
+        % Log plot selection
+        Event('Instantaneous BED plot selected');
+        
+        % Check if the BED and image are loaded
+        if isfield(handles, 'image') && ...
+                isfield(handles.image, 'data') ...
+                && isfield(handles, 'bed') && ...
+                isfield(handles.bed, 'instant')
+                
+            % Re-initialize plot with new overlay data
+            handles.tcsplot.Initialize('overlay', struct('data', ...
+                handles.bed.instant, 'start', handles.image.start, ...
+                'width', handles.image.width, 'dimensions', ...
+                handles.image.dimensions));
+            
+            % Enable transparency and TCS inputs
+            set(handles.alpha, 'visible', 'on');
+            set(handles.tcs_button, 'visible', 'on');
+        else
+            % Log why plot was not displayed
+            Event('BED not displayed as no data exists');
+        end
+        
+    % Continuous BED display
+    case 7
+        
+        % Log plot selection
+        Event('Continuous BED plot selected');
+        
+        % Check if the BED and image are loaded
+        if isfield(handles, 'image') && ...
+                isfield(handles.image, 'data') ...
+                && isfield(handles, 'bed') && ...
+                isfield(handles.bed, 'continuous')
+                
+            % Re-initialize plot with new overlay data
+            handles.tcsplot.Initialize('overlay', struct('data', ...
+                handles.bed.continuous, 'start', handles.image.start, ...
+                'width', handles.image.width, 'dimensions', ...
+                handles.image.dimensions));
+            
+            % Enable transparency and TCS inputs
+            set(handles.alpha, 'visible', 'on');
+            set(handles.tcs_button, 'visible', 'on');
+        else
+            % Log why plot was not displayed
+            Event('BED not displayed as no data exists');
+        end
 end
 
 % Log completion
