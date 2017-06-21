@@ -81,13 +81,23 @@ Event(['Default dose view transparency set to ', ...
     config.DEFAULT_TRANSPARENCY]);
 
 % Check for fraction dose threshold
-if isfield(config, 'DOSE_FX_THRESHOLD_GY')
-    config.DOSE_FX_THRESHOLD_GY = str2double(config.DOSE_FX_THRESHOLD_GY);
+if isfield(config, 'DOSE_FX_THRESHOLD')
+    config.DOSE_FX_THRESHOLD = str2double(config.DOSE_FX_THRESHOLD);
 else
-    config.DOSE_FX_THRESHOLD_GY = 0.1;
+    config.DOSE_FX_THRESHOLD = 0.1;
 end
-Event(sprintf('Fraction dose threshold set to %0.3f Gy', ...
-    config.DOSE_FX_THRESHOLD_GY));
+Event(sprintf('Fraction dose threshold set to %0.1f%% of max dose', ...
+    config.DOSE_FX_THRESHOLD * 100));
+
+% Check for structure threshold
+if isfield(config, 'STRUCT_THRESHOLD') && ...
+        strcmp(config.STRUCT_THRESHOLD, '1')
+    config.STRUCT_THRESHOLD = true;
+    Event('Structure based BED threshold enabled');
+else
+    config.STRUCT_THRESHOLD = false;
+    Event('Structure based BED threshold disabled');
+end
 
 % Check for accumulation threshold
 if isfield(config, 'DOSE_ACCUM_THRESHOLD_GY')

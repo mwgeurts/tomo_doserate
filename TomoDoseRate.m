@@ -523,12 +523,35 @@ function calcdose_button_Callback(hObject, ~, handles)
 % Log action
 Event('Executing CalcDoseRate');
 
+% If structure based thresholds are enabled
+if handles.config.STRUCT_THRESHOLD
+    
+    % Initialize empty mask
+    mask = zeros(size(handles.image.data));
+    
+    % Loop through structures
+    for i = 1:length(handles.image.structures)
+       
+        % Add structure mask
+        mask = mask + handles.image.structures{i}.mask;
+    end
+    
+    % Add to dose threshold
+    mask = (mask > 0) .* (handles.dose.data / max(max(max(...
+        handles.dose.data))) > handles.config.DOSE_FX_THRESHOLD);
+else
+    
+    % Otherwise, only use dose threshold
+    mask = handles.dose.data / max(max(max(handles.dose.data))) > ...
+        handles.config.DOSE_FX_THRESHOLD;
+end
+
 % Execute CalculateDoseRate()
 handles.rate = CalcDoseRate('image', handles.image, 'plan', ...
-    handles.plan, 'mask', handles.dose.data / handles.plan.fractions > ...
-    handles.config.DOSE_FX_THRESHOLD_GY, 'threshold', ...
+    handles.plan, 'mask', mask, 'threshold', ...
     handles.config.DOSE_ACCUM_THRESHOLD_GY, 'modelfolder', ...
-    handles.config.MODEL_PATH, 'downsample', handles.config.DOWNSAMPLE_FACTOR);
+    handles.config.MODEL_PATH, 'downsample', ...
+    handles.config.DOWNSAMPLE_FACTOR);
 
 % Log completion
 Event(['Dose rates have now been calculated. You may now proceed to ', ...
@@ -540,9 +563,11 @@ set(handles.calcbed_button, 'Enable', 'on');
 % Change load button to save
 set(handles.loadmat_button, 'String', 'Save Stored Dose Rate');
 
+% Clear temporary variables
+clear i mask;
+
 % Update handles structure
 guidata(hObject, handles);
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function loadmat_button_Callback(hObject, ~, handles)
