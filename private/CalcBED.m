@@ -87,13 +87,6 @@ bed.variable = zeros(max(rate.indices(:,1)), max(rate.indices(:,2)), ...
 bed.continuous = zeros(size(bed.variable));
 bed.instant = zeros(size(bed.variable));
 
-% Log beginning of computation and start timer
-if exist('Event', 'file') == 2
-    Event(sprintf(['Calculating BED using the %s function across ', ...
-        '%i voxels'], bed.model, n));
-    t = tic;
-end
-
 % If a valid screen size is returned (MATLAB was run without -nodisplay)
 if usejava('jvm') && feature('ShowFigureWindows')
     
@@ -126,53 +119,55 @@ end
 % Store current waitbar progress
 c = 0;
 
-% Loop through each voxel
+% Find indices of non-zero voxels
+[idx, ~, ~] = find(rate.sparse);
+idx = unique(idx);
+n = length(idx);
+
+% Log beginning of computation and start timer
+if exist('Event', 'file') == 2
+    Event(sprintf(['Calculating BED using the %s function across ', ...
+        '%i non-zero voxels'], bed.model, n));
+    t = tic;
+end
+
+% Loop through each non-zero voxel
 for i = 1:n
 
     % Update waitbar if 2% progress has been made
     if i/n - c > 0.02 && exist('progress', 'var') && ishandle(progress)
-        c = i/n;
-        
-        % If less than 2%, do not display progress
-        if c == 0
-            waitbar(c, progress);
-        else
-            r = (n-i) * toc(t) / i;
-            waitbar(c, progress, sprintf(['Calculating BED ', ...
-            '(%02.0f:%02.0f:%02.0f remaining)'], floor(r / 3600), ...
-            floor(mod(r, 3600) / 60), mod(r, 60)));
-        end
+        c = i/n;        
+        r = (n-i) * toc(t) / i;
+        waitbar(c, progress, sprintf(['Calculating BED ', ...
+        '(%02.0f:%02.0f:%02.0f remaining)'], floor(r / 3600), ...
+        floor(mod(r, 3600) / 60), mod(r, 60)));
     end
-    
-    % If sparse matrix is not empty for this array
-    if ~isempty(find(rate.sparse(i, :), 1))
         
-        % Convert and repeat dose rate
-        drate = repmat(full(rate.sparse(i, :)), 1, repeat);
-        
-        % Execute model function for variable dose rate
-        if exist('params', 'var')
-            bed.variable(i) = model(drate, time, params(n,:));
-        else
-            bed.variable(i) = model(drate, time);
-        end
-        
-        % Execute model function assuming continuous delivery
-        if exist('params', 'var')
-            bed.continuous(i) = model(ones(1,length(drate)) * ...
-                sum(drate) / length(drate), time, params(n,:));
-        else
-            bed.continuous(i) = model(ones(1,length(drate)) * ...
-                sum(drate) / length(drate), time);
-        end
-        
-        % Execute model function assuming instantaneous delivery
-        if exist('params', 'var')
-            bed.instant(i) = model(sum(drate) * ...
-                rate.scale, [0 1e-10], params(n,:));
-        else
-            bed.instant(i) = model(sum(drate) * plan.scale, [0 1e-10]);
-        end
+    % Convert and repeat dose rate
+    drate = repmat(full(rate.sparse(idx(i), :)), 1, repeat);
+
+    % Execute model function for variable dose rate
+    if exist('params', 'var')
+        bed.variable(idx(i)) = model(drate, time, params(idx(i),:));
+    else
+        bed.variable(idx(i)) = model(drate, time);
+    end
+
+    % Execute model function assuming continuous delivery
+    if exist('params', 'var')
+        bed.continuous(idx(i)) = model(ones(1,length(drate)) * ...
+            sum(drate) / length(drate), time, params(i,:));
+    else
+        bed.continuous(idx(i)) = model(ones(1,length(drate)) * ...
+            sum(drate) / length(drate), time);
+    end
+
+    % Execute model function assuming instantaneous delivery
+    if exist('params', 'var')
+        bed.instant(idx(i)) = model(sum(drate) * ...
+            rate.scale, [0 1e-10], params(idx(i),:));
+    else
+        bed.instant(idx(i)) = model(sum(drate) * plan.scale, [0 1e-10]);
     end
 end
 
@@ -188,4 +183,4 @@ if exist('Event', 'file') == 2
 end
 
 % Clear temporary variables
-clear rate structures model params repeat drate time t n i j;
+clear rate structures model params repeat drate time t n i j idx;
