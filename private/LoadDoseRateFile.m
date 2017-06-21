@@ -52,4 +52,7 @@ if ~isequal(name, 0)
     
     % Enable calculate BED button
     set(handles.calcbed_button, 'Enable', 'on');
+    
+    % Show message box
+    msgbox(['Stored dose rate successfully loaded from ', name]);
 end
