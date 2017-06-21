@@ -1,6 +1,6 @@
 DEFAULT_PATH                =   userpath
 MODEL_PATH                  =   ./GPU
-ATLAS_FILE                  =   atlas.xml
+ATLAS_FILE                  =   ./atlas.xml
 DEFAULT_IMAGE_VIEW          =   T
 DEFAULT_TRANSPARENCY        =   30%
 DEFAULT_CALC_METHOD         =   1
