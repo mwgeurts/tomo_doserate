@@ -366,23 +366,24 @@ function calcbed_button_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Log action
-Event('Executing CalcBED');
-
-% Inject inter-beam delays into time vector, assuming provided delay is in
-% minutes
-time = InjectBeamDelay(handles.rate.time, handles.plan, ...
-    handles.delay * 60);
-
-% Get table contents
-t = get(handles.struct_table, 'Data');
-
-% Calculate alpha/beta ratio for each voxel
-ab = SetAlphaBetaRatio(handles.ratios, handles.image.structures, t(:,3));
-
 % If a dose rate has been calculated
 if isfield(handles, 'rate') && ~isempty(handles.rate)
 
+    % Log action
+    Event('Preparing BED inputs');
+
+    % Inject inter-beam delays into time vector, assuming provided delay 
+    % is in minutes
+    time = InjectBeamDelay(handles.rate.time, handles.plan, ...
+        handles.delay * 60);
+
+    % Get table contents
+    t = get(handles.struct_table, 'Data');
+
+    % Calculate alpha/beta ratio for each voxel
+    ab = SetAlphaBetaRatio(handles.ratios, ...
+        handles.image.structures, t(:,3));
+    
     % Execute code block based on display GUI item value
     switch get(handles.model_menu, 'Value')
 
@@ -406,15 +407,23 @@ if isfield(handles, 'rate') && ~isempty(handles.rate)
         'params', params, 'repeat', handles.repeat, 'structures', ...
         handles.image.structures, 'time', time);
     
+    % Update info table with total time
+    data = get(handles.plan_table, 'Data');
+    data{9,2} = sprintf('%0.1f min', handles.rate.time(end)/60 + ...
+        handles.delay * (handles.repeat * ...
+        length(handles.plan.numberOfProjections) - 1));
+    set(handles.plan_table, 'Data', data);
+    
     % Update stats table
     
     
-    % Update plot
+    % Update plot to show BED
+    set(handles.tcs_menu, 'Value', 3);
+    handles = UpdateDoseDisplay(handles);
     
+    % Clear temporary variables
+    clear time ab fcn params data;
 end
-
-% Clear temporary variables
-clear time ab fcn params;
 
 % Update handles structure
 guidata(hObject, handles);
@@ -609,6 +618,11 @@ function params_table_CellEditCallback(hObject, ~, handles)
 
 % Execute UpdateBEDmodel
 handles = UpdateBEDmodel(handles);
+
+% If the average dose rate display is being shown, update it
+if get(handles.tcs_menu, 'Value') == 3
+    handles = UpdateDoseDisplay(handles);
+end
 
 % Update handles structure
 guidata(hObject, handles);
