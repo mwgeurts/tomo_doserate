@@ -46,7 +46,7 @@ if isletter(handles.db(1))
     
     % Retrieve Structures
     handles.image.structures = LoadStructures(handles.path, handles.name, ...
-        handles.image);
+        handles.image, handles.atlas);
     
     % Update progress bar
     waitbar(0.6, progress, 'Loading Dose Image');
@@ -74,7 +74,7 @@ elseif str2double(handles.db(1)) >= 2
     
     % Retrieve Structures
     handles.image.structures = LoadLegacyStructures(handles.path, ...
-        handles.name, handles.image);
+        handles.name, handles.image, handles.atlas);
     
     % Update progress bar
     waitbar(0.6, progress, 'Loading Dose Image');
