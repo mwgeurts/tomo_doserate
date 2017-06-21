@@ -42,11 +42,14 @@ if ~isequal(name, 0)
     
     % Load file contents
     rate = handles.rate; %#ok<NASGU>
-    save(fullfile(path, name), 'rate', '-mat');
+    save(fullfile(path, name), 'rate', '-mat', '-nocompression', '-v7.3');
      
     % Clear temporary variables
     clear rate;
     
     % Log action
-    Event(['Rate variable saved to ', name]);
+    Event(['Dose rate variables successfully saved to ', name]);
+    
+    % Show message box
+    msgbox(['Dose rate variables successfully saved to ', name]);
 end
