@@ -123,48 +123,55 @@ elseif exist('params', 'var') && size(params, 2) == 1
    params = repmat(params', n, 1); 
 end
 
+% Store current waitbar progress
+c = 0;
+
 % Loop through each voxel
 for i = 1:n
 
+    % Update waitbar if 2% progress has been made
+    if i/n - c > 0.02 && exist('progress', 'var') && ishandle(progress)
+        c = i/n;
+        
+        % If less than 2%, do not display progress
+        if c == 0
+            waitbar(c, progress);
+        else
+            r = (n-i) * toc(t) / i;
+            waitbar(c, progress, sprintf(['Calculating BED ', ...
+            '(%02.0f:%02.0f:%02.0f remaining)'], floor(r / 3600), ...
+            floor(mod(r, 3600) / 60), mod(r, 60)));
+        end
+    end
+    
     % If sparse matrix is not empty for this array
     if ~isempty(find(rate.sparse(i, :), 1))
-        
-        % Update waitbar
-        if exist('progress', 'var') && ishandle(progress)
-            waitbar(i/n, progress);
-        end
         
         % Convert and repeat dose rate
         drate = repmat(full(rate.sparse(i, :)), 1, repeat);
         
         % Execute model function for variable dose rate
         if exist('params', 'var')
-            bed.variable(rate.indices(i,1), rate.indices(i,2), ...
-                rate.indices(i,3)) = model(drate, time, params(n,:));
+            bed.variable(i) = model(drate, time, params(n,:));
         else
-            bed.variable(rate.indices(i,1), rate.indices(i,2), ...
-                rate.indices(i,3)) = model(drate, time);
+            bed.variable(i) = model(drate, time);
         end
         
         % Execute model function assuming continuous delivery
         if exist('params', 'var')
-            bed.continuous(rate.indices(i,1), rate.indices(i,2), ...
-                rate.indices(i,3)) = model(ones(1,length(drate)) * ...
+            bed.continuous(i) = model(ones(1,length(drate)) * ...
                 sum(drate) / length(drate), time, params(n,:));
         else
-            bed.continuous(rate.indices(i,1), rate.indices(i,2), ...
-                rate.indices(i,3)) = model(ones(1,length(drate)) * ...
+            bed.continuous(i) = model(ones(1,length(drate)) * ...
                 sum(drate) / length(drate), time);
         end
         
         % Execute model function assuming instantaneous delivery
         if exist('params', 'var')
-            bed.instant(rate.indices(i,1), rate.indices(i,2), ...
-                rate.indices(i,3)) = model(sum(drate) * ...
+            bed.instant(i) = model(sum(drate) * ...
                 rate.scale, [0 1e-10], params(n,:));
         else
-            bed.instant(rate.indices(i,1), rate.indices(i,2), ...
-                rate.indices(i,3)) = model(sum(drate) * plan.scale, [0 1e-10]);
+            bed.instant(i) = model(sum(drate) * plan.scale, [0 1e-10]);
         end
     end
 end
