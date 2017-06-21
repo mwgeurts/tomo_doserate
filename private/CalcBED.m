@@ -22,6 +22,9 @@ function bed = CalcBED(varargin)
 %                   repeat the dose rate calculation. Can be used to 
 %                   simulate multiple  back to back deliveries of the same 
 %                   plan.
+%   *time:          if provided, this time vector is used instead of the
+%                   one provided in the rate input structure. It must be
+%                   the same length as size(rate.sparse, 2);
 %  
 % The following structure fields are returned upon successful completion:
 %
@@ -67,6 +70,8 @@ for i = 1:2:length(varargin)
         params = varargin{i+1};
     elseif strcmpi(varargin{i}, 'repeat')
         repeat = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'time')
+        time = varargin{i+1};
     end
 end
 
@@ -74,11 +79,11 @@ end
 bed.model = func2str(model);
 
 % Store the number of voxels
-n = size(rate.indices, 2);
+n = size(rate.indices, 1);
 
 % Initialize return matrices
-bed.variable = zeros(max(rate.indices(1,:)), max(rate.indices(2,:)), ...
-    max(rate.indices(3,:)));
+bed.variable = zeros(max(rate.indices(:,1)), max(rate.indices(:,2)), ...
+    max(rate.indices(:,3)));
 bed.continuous = zeros(size(bed.variable));
 bed.instant = zeros(size(bed.variable));
 
@@ -96,8 +101,14 @@ if usejava('jvm') && feature('ShowFigureWindows')
     progress = waitbar(0, 'Calculating BED');
 end
 
+% If time is provided, use it rather than sparse matrix time
+if exist('time', 'var')
+    time = repmat(time, 1, repeat);
+else
+    time = repmat(rate.time, 1, repeat);
+end
+
 % Repeat time vector, adding onto previous values
-time = repmat(rate.time, 1, repeat);
 for j = 2:repeat
     time((1+(j-1)*length(rate.time)):(j*length(rate.time))) = ...
         time((1+(j-1)*length(rate.time)):(j*length(rate.time))) + ...
@@ -114,49 +125,46 @@ end
 
 % Loop through each voxel
 for i = 1:n
-    
-    % Update waitbar
-    if exist('progress', 'var') && ishandle(progress)
-        waitbar(i/n, progress);
-    end
-    
-    % Store dose rate vector
-    drate = rate.sparse(i, :);
-    
+
     % If sparse matrix is not empty for this array
-    if find(drate,1) > 0
+    if ~isempty(find(rate.sparse(i, :), 1))
+        
+        % Update waitbar
+        if exist('progress', 'var') && ishandle(progress)
+            waitbar(i/n, progress);
+        end
         
         % Convert and repeat dose rate
-        drate = repmat(full(drate), 1, repeat);
+        drate = repmat(full(rate.sparse(i, :)), 1, repeat);
         
         % Execute model function for variable dose rate
         if exist('params', 'var')
-            bed.variable(rate.indices(1,i), rate.indices(2,i), ...
-                rate.indices(3,i)) = model(drate, time, params(n,:));
+            bed.variable(rate.indices(i,1), rate.indices(i,2), ...
+                rate.indices(i,3)) = model(drate, time, params(n,:));
         else
-            bed.variable(rate.indices(1,i), rate.indices(2,i), ...
-                rate.indices(3,i)) = model(drate, time);
+            bed.variable(rate.indices(i,1), rate.indices(i,2), ...
+                rate.indices(i,3)) = model(drate, time);
         end
         
         % Execute model function assuming continuous delivery
         if exist('params', 'var')
-            bed.continuous(rate.indices(1, i), rate.indices(2, i), ...
-                rate.indices(3, i)) = model(ones(length(drate), 1) * ...
+            bed.continuous(rate.indices(i,1), rate.indices(i,2), ...
+                rate.indices(i,3)) = model(ones(1,length(drate)) * ...
                 sum(drate) / length(drate), time, params(n,:));
         else
-            bed.continuous(rate.indices(1,i), rate.indices(2,i), ...
-                rate.indices(3,i)) = model(ones(length(drate),1) * ...
+            bed.continuous(rate.indices(i,1), rate.indices(i,2), ...
+                rate.indices(i,3)) = model(ones(1,length(drate)) * ...
                 sum(drate) / length(drate), time);
         end
         
         % Execute model function assuming instantaneous delivery
         if exist('params', 'var')
-            bed.instant(rate.indices(1,i), rate.indices(2,i), ...
-                rate.indices(3,i)) = model(sum(drate) * ...
-                plan.scale, [0 1e-10], params(n,:));
+            bed.instant(rate.indices(i,1), rate.indices(i,2), ...
+                rate.indices(i,3)) = model(sum(drate) * ...
+                rate.scale, [0 1e-10], params(n,:));
         else
-            bed.instant(rate.indices(1,i), rate.indices(2,i), ...
-                rate.indices(3,i)) = model(sum(drate) * plan.scale, [0 1e-10]);
+            bed.instant(rate.indices(i,1), rate.indices(i,2), ...
+                rate.indices(i,3)) = model(sum(drate) * plan.scale, [0 1e-10]);
         end
     end
 end
@@ -164,6 +172,7 @@ end
 % Update waitbar
 if exist('progress', 'var') && ishandle(progress)
     waitbar(1, progress, 'Completed!');
+    close(progress);
 end
 
 % Log dose calculation completion
