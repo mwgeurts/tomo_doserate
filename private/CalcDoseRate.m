@@ -131,8 +131,11 @@ if ~isfield(rate, 'threshold')
     rate.threshold = 0.0001;
 end
 
-% Store the threshold as an absolute dose, using the plan scale
-thresh = rate.threshold * plan.scale / plan.fractions;
+% Store the per fraction scale
+rate.scale = plan.scale / plan.fractions;
+
+% Store the threshold as an absolute dose, using the scale
+thresh = rate.threshold * rate.scale;
 
 % Verify mask size equals the image size
 if ~isequal(size(image.data), size(rate.mask))
@@ -172,8 +175,6 @@ n = size(plan.sinogram, 2);
 rate.sparse = spalloc(numel(image.data), n + length(plan.trimmedLengths), ...
     length(find(rate.mask)) * 20);
 
-% Store the per fraction scale
-rate.scale = plan.scale / plan.fractions;
 
 % Store the time vector
 rate.time = (1:(n + length(plan.trimmedLengths))) * rate.scale;
@@ -249,14 +250,12 @@ for i = 2:n
     d = CalcDose(modplan);
     dose = reshape(d.data .* rate.mask / plan.fractions, 1, []);
     
-    % Store dose rates (relative to previous dose) greater than threshold
+    % Store dose differences (relative to previous dose) greater than threshold
     rate.sparse((dose - prevdose) > thresh, i + find(i <= l, 1) - 1) = ...
-        dose((dose - prevdose) > thresh);
+        dose((dose - prevdose) > thresh) - prevdose((dose - prevdose) > thresh);
     
     % Update previous dose
-    prevdose((dose - prevdose) > thresh) = ...
-        prevdose((dose - prevdose) > thresh) + ...
-        dose((dose - prevdose) > thresh);
+    prevdose((dose - prevdose) > thresh) = dose((dose - prevdose) > thresh);
 end
 
 % Compute the RMS error
