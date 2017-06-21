@@ -521,34 +521,13 @@ function calcdose_button_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Log action
-Event('Executing CalcDoseRate');
+Event('Preparing inputs for dose rate calculation');
 
-% If structure based thresholds are enabled
-if handles.config.STRUCT_THRESHOLD
-    
-    % Initialize empty mask
-    mask = zeros(size(handles.image.data));
-    
-    % Loop through structures
-    for i = 1:length(handles.image.structures)
-       
-        % Add structure mask
-        mask = mask + handles.image.structures{i}.mask;
-    end
-    
-    % Add to dose threshold
-    mask = (mask > 0) .* (handles.dose.data / max(max(max(...
-        handles.dose.data))) > handles.config.DOSE_FX_THRESHOLD);
-else
-    
-    % Otherwise, only use dose threshold
-    mask = handles.dose.data / max(max(max(handles.dose.data))) > ...
-        handles.config.DOSE_FX_THRESHOLD;
-end
-
-% Execute CalculateDoseRate()
+% Execute CalcDoseRate()
 handles.rate = CalcDoseRate('image', handles.image, 'plan', ...
-    handles.plan, 'mask', mask, 'threshold', ...
+    handles.plan, 'mask', CalcMask(handles.dose.data, ...
+    handles.config.DOSE_FX_THRESHOLD, handles.config.STRUCT_THRESHOLD, ...
+    handles.image.structures), 'threshold', ...
     handles.config.DOSE_ACCUM_THRESHOLD_GY, 'modelfolder', ...
     handles.config.MODEL_PATH, 'downsample', ...
     handles.config.DOWNSAMPLE_FACTOR);
