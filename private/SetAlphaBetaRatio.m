@@ -64,8 +64,11 @@ for i = 1:length(structures)
     indices = max(indices, structures{i}.mask * idx);
 end
 
+% Store values as vector
+ab = cell2mat(alphabeta(2,:));
+
 % Convert matrix to alpha/beta ratios
-matrix = reshape(cell2mat(alphabeta(2, indices)), size(structures{1}.mask));
+matrix = reshape(ab(indices), size(structures{1}.mask));
 
 % Log completion
 if exist('Event', 'file') == 2
@@ -73,6 +76,6 @@ if exist('Event', 'file') == 2
 end
 
 % Clear temporary variables
-clear alphabeta indices i idx;
+clear alphabeta indices ab i idx;
 
 
