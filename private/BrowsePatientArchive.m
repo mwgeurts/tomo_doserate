@@ -29,7 +29,7 @@ if ~isfield(handles.config, 'UNIT_FLAG') || ...
 
     % Request the user to select the Daily QA DICOM or XML
     Event('UI window opened to select file');
-    [handles.name, handles.path] = uigetfile({'*_patient.xml', ...
+    [name, path] = uigetfile({'*_patient.xml', ...
         'Patient Archive (*_patient.xml)'; '*.xml', ...
         'Legacy Archive (*.xml)'}, 'Select the Archive Patient XML File', ...
         handles.path);
@@ -38,18 +38,19 @@ else
     
     % Log unit test
     Event('Retrieving stored name and path variables', 'UNIT');
-    handles.name = handles.config.UNIT_NAME;
-    handles.path = handles.config.UNIT_PATH;
+    name = handles.config.UNIT_NAME;
+    path = handles.config.UNIT_PATH;
 end
     
 % If the user selected a file
-if ~isequal(handles.name, 0)
+if ~isequal(name, 0)
+    
+    % Store name and path
+    handles.name = name;
+    handles.path = path;
     
     % Log new path
     Event(['Default file path updated to ', handles.path]);
-    
-    % Clear all
-    handles = ClearAllData(handles);
     
     % Update archive_file text box
     set(handles.file_text, 'String', ...
@@ -134,3 +135,6 @@ if ~isequal(handles.name, 0)
 else
     Event('No archive file was selected');
 end
+
+% Clear temporary variables
+clear name path;
