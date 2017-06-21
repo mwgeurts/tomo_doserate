@@ -107,7 +107,7 @@ for j = 2:repeat
         time((1+(j-1)*length(rate.time)):(j*length(rate.time))) + ...
         (j-1) * (max(rate.time) + rate.scale);
 end
-time = [0 time];
+time = [0 time(1:end-1)];
 
 % Repeat parameters, if not already repeated
 if exist('params', 'var') && size(params, 1) == 1 
@@ -148,26 +148,27 @@ for i = 1:n
 
     % Execute model function for variable dose rate
     if exist('params', 'var')
-        bed.variable(idx(i)) = model(drate, time, params(idx(i),:));
+        bed.variable(idx(i)) = model(drate(1:end-1), time, params(idx(i),:));
     else
-        bed.variable(idx(i)) = model(drate, time);
+        bed.variable(idx(i)) = model(drate(1:end-1), time);
     end
 
     % Execute model function assuming continuous delivery
     if exist('params', 'var')
-        bed.continuous(idx(i)) = model(ones(1,length(drate)) * ...
-            sum(drate) / length(drate), time, params(i,:));
+        bed.continuous(idx(i)) = model(ones(1,length(drate)-1) * ...
+            sum(drate(1:end-1)) / (length(drate)-1), time, params(i,:));
     else
         bed.continuous(idx(i)) = model(ones(1,length(drate)) * ...
-            sum(drate) / length(drate), time);
+            sum(drate(1:end-1)) / (length(drate)-1), time);
     end
 
     % Execute model function assuming instantaneous delivery
     if exist('params', 'var')
-        bed.instant(idx(i)) = model(sum(drate) * ...
-            rate.scale, [0 1e-10], params(idx(i),:));
+        bed.instant(idx(i)) = model(sum(drate(1:end-1) .* diff(time)) / ...
+            1e-10, [0 1e-10], params(idx(i),:));
     else
-        bed.instant(idx(i)) = model(sum(drate) * plan.scale, [0 1e-10]);
+        bed.instant(idx(i)) = model(sum(drate(1:end-1) .* diff(time)) / ...
+            1e-10, [0 1e-10]);
     end
 end
 
