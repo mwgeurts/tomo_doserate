@@ -10,7 +10,7 @@ function bed = BiExponential(drate, time, params)
 %   time:   vector of length n+1 containing the start/stop time of each bin
 %   params: vector of model parameters: alpha/beta ratio, first repair half
 %           life, second repair half life, and fraction of first and second 
-%           repair half lives.
+%           repair half lives. Half lives should be in hours.
 %
 % Author: Mark Geurts, mark.w.geurts@gmail.com
 % Copyright (C) 2017 University of Wisconsin Board of Regents
@@ -28,7 +28,7 @@ function bed = BiExponential(drate, time, params)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
-% Define alpha/beta ratio
+% Define alpha/beta ratio in Gy
 ab = params(1);
 
 % Define half lives, in seconds
@@ -37,7 +37,7 @@ h = params(2:3) * 3600;
 % Define proportions
 p = params(4:5);
 
-% Compute integral dose
+% Compute integral dose, in Gy
 d = sum(drate .* diff(time));
 
 % Compute dose protraction factors
