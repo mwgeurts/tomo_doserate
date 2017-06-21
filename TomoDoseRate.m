@@ -109,6 +109,9 @@ handles = ParseConfigOptions(handles, 'config.txt');
 % Set version_text UI text
 set(handles.version_text, 'String', sprintf('Version %s', handles.version));
 
+% Set structure type options
+handles.struct_table.ColumnFormat{3} = handles.ratios(1, :);
+
 % Set BED plot options
 options = UpdateBEDmodel();
 set(handles.model_menu, 'String', options);
@@ -366,6 +369,17 @@ function calcbed_button_Callback(hObject, ~, handles)
 % Log action
 Event('Executing CalcBED');
 
+% Inject inter-beam delays into time vector, assuming provided delay is in
+% minutes
+time = InjectBeamDelay(handles.rate.time, handles.plan, ...
+    handles.delay * 60);
+
+% Get table contents
+t = get(handles.struct_table, 'Data');
+
+% Calculate alpha/beta ratio for each voxel
+ab = SetAlphaBetaRatio(handles.ratios, handles.image.structures, t(:,3));
+
 % If a dose rate has been calculated
 if isfield(handles, 'rate') && ~isempty(handles.rate)
 
@@ -378,20 +392,8 @@ if isfield(handles, 'rate') && ~isempty(handles.rate)
             % Store function handle
             fcn = @BiExponential;
             
-            % Inject inter-beam delays into time vector
-            handles.rate = InjectBeamDelay(handles.rate, handles.plan, ...
-                handles.delay);
-    
-            % Get table contents
-            t = get(handles.struct_table, 'Data');
-            
-            % Calculate alpha/beta ratio for each voxel
-            ab = SetAlphaBetaRatio('ab', [handles.ab(1) ...
-                handles.ab(1) handles.ab(2)], 'structures', ...
-                handles.image.structures, 'type', t{3,:});
-            
             % Store remaining model parameters
-            params = horzcat(ab, repmat(handles.half, ...
+            params = horzcat(reshape(ab, [], 1), repmat(handles.half, ...
                 numel(handles.image.data), 1), repmat(handles.prop, ...
                 numel(handles.image.data), 1));
             
@@ -402,7 +404,7 @@ if isfield(handles, 'rate') && ~isempty(handles.rate)
     % Execute CalcBED()
     handles.bed = CalcBED('rate', handles.rate, 'model', fcn, ...
         'params', params, 'repeat', handles.repeat, 'structures', ...
-        handles.image.structures);
+        handles.image.structures, 'time', time);
     
     % Update stats table
     
@@ -410,6 +412,9 @@ if isfield(handles, 'rate') && ~isempty(handles.rate)
     % Update plot
     
 end
+
+% Clear temporary variables
+clear time ab fcn params;
 
 % Update handles structure
 guidata(hObject, handles);
