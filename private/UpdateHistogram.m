@@ -40,6 +40,11 @@ try
 plotoptions = {
     ''
     'Planned Dose Volume Histogram'
+    'Average Dose Rate Histogram'
+    'Maximum Dose Rate Histogram'
+    'Biologically Effective Dose Histogram'
+    'Instantaneous BED Histogram'
+    'Continuous Dose BED Histogram'
 };
 
 % If no input arguments are provided
@@ -52,10 +57,10 @@ if nargin == 0
     return;
     
 % Otherwise, if 1, set the input variable and update the plot
-elseif nargin >= 3
+elseif nargin == 1
 
     % Set input variables
-    handles = varargin{3};
+    handles = varargin{1};
 
     % Log start
     Event('Updating histogram plot display');
@@ -67,19 +72,19 @@ else
 end
 
 % Clear and set reference to axis
-cla(varargin{1}, 'reset');
-axes(varargin{1});
+cla(handles.hist_axes, 'reset');
+axes(handles.hist_axes);
 Event('Current plot set to histogram display');
 
 % Turn off the display while building
-set(allchild(varargin{1}), 'visible', 'off'); 
-set(varargin{1}, 'visible', 'off');
+set(allchild(handles.hist_axes), 'visible', 'off'); 
+set(handles.hist_axes, 'visible', 'off');
 
 % Disable export button
-set(handles.exportplot_button, 'enable', 'off');
+set(handles.exporthist_button, 'enable', 'off');
 
 % Execute code block based on display GUI item value
-switch varargin{2}
+switch get(handles.hist_menu, 'Value')
     
     % Planned DVH
     case 2
@@ -87,11 +92,111 @@ switch varargin{2}
         % Log plot selection
         Event('Planned dose volume histogram selected');
         
-    
+        % If a DVHViewer object exists, update it with the planned dose
+        if isfield(handles, 'histogram') && isfield(handles, 'dose') && ...
+                ~isempty(handles.dose)
         
+            handles.histogram.Calculate('doseA', ...
+                struct('data', handles.dose.data * handles.repeat, ...
+                'width', handles.dose.width), 'xlabel', ...
+                'Fraction Dose (Gy)');
+        else
+            Event('Histogram not plotted as plan data does not exist');
+        end
         
+    % Average dose rate
+    case 3
         
+        % Log plot selection
+        Event('Average dose rate histogram selected');
         
+        % If a DVHViewer object exists, update it with the planned dose
+        if isfield(handles, 'histogram') && isfield(handles, 'rate') && ...
+                isfield(handles.rate, 'average')
+            
+            % Calculate scaling factor for average to account for delays
+            % between beams
+            s = handles.rate.time(end) / (handles.rate.time(end) + ...
+                handles.delay * 60 * (handles.repeat * ...
+                length(handles.plan.numberOfProjections) - 1));
+        
+            handles.histogram.Calculate('doseA', ...
+                struct('data', handles.rate.average * s, ...
+                'width', handles.dose.width), 'xlabel', 'Dose Rate (Gy/sec)');
+        else
+            Event('Histogram not plotted as dose rate data does not exist');
+        end
+        
+    % Maximum dose rate
+    case 4
+        
+        % Log plot selection
+        Event('Maximum dose rate histogram selected');
+        
+        % If a DVHViewer object exists, update it with the planned dose
+        if isfield(handles, 'histogram') && isfield(handles, 'rate') && ...
+                isfield(handles.rate, 'max')
+           
+            handles.histogram.Calculate('doseA', ...
+                struct('data', handles.rate.max, 'width', ...
+                handles.dose.width), 'xlabel', 'Dose Rate (Gy/sec)');
+        else
+            Event('Histogram not plotted as dose rate data does not exist');
+        end
+        
+    % BED histogram
+    case 5
+        
+        % Log plot selection
+        Event('BED histogram selected');
+        
+        % If a DVHViewer object exists, update it with the planned dose
+        if isfield(handles, 'histogram') && isfield(handles, 'bed') && ...
+                isfield(handles.bed, 'variable')
+           
+            handles.histogram.Calculate('doseA', ...
+                struct('data', handles.bed.variable, 'width', ...
+                handles.dose.width), 'xlabel', ...
+                'Variable Dose Rate Biologically Effective Dose (Gy)');
+        else
+            Event('Histogram not plotted as BED data does not exist');
+        end
+        
+    % Instantaneous BED histogram
+    case 6
+        
+        % Log plot selection
+        Event('Instantaneous BED histogram selected');
+        
+        % If a DVHViewer object exists, update it with the planned dose
+        if isfield(handles, 'histogram') && isfield(handles, 'bed') && ...
+                isfield(handles.bed, 'instant')
+           
+            handles.histogram.Calculate('doseA', ...
+                struct('data', handles.bed.instant, 'width', ...
+                handles.dose.width), 'xlabel', ...
+                'Equivalent Instantaneous Dose BED (Gy)');
+        else
+            Event('Histogram not plotted as BED data does not exist');
+        end
+        
+    % Continuous BED histogram
+    case 7
+        
+        % Log plot selection
+        Event('Continuous BED histogram selected');
+        
+        % If a DVHViewer object exists, update it with the planned dose
+        if isfield(handles, 'histogram') && isfield(handles, 'bed') && ...
+                isfield(handles.bed, 'continuous')
+           
+            handles.histogram.Calculate('doseA', ...
+                struct('data', handles.bed.continuous, 'width', ...
+                handles.dose.width), 'xlabel', ...
+                'Equivalent Continuous Dose Rate BED (Gy)');
+        else
+            Event('Histogram not plotted as BED data does not exist');
+        end
 end
 
 % Log completion
@@ -101,3 +206,6 @@ Event(sprintf('Plot updated successfully in %0.3f seconds', toc));
 catch err
     Event(getReport(err, 'extended', 'hyperlinks', 'off'), 'ERROR');
 end
+
+% Return the handles object
+varargout{1} = handles;
