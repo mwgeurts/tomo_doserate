@@ -48,6 +48,3 @@ g(2) = 2 * sum(drate .* diff(time) .* cumsum(exp(-log(2)/h(2) * ...
 
 % Compute BED as weighted sum of both components
 bed = sum(p .* (1 + g * d / ab) * d) / sum(p);
-
-
-
