@@ -21,10 +21,22 @@ else
     dose = 'N/A';
 end
 
+% If projection data exists
 if isfield(handles.plan, 'numberOfProjections')
     n = sprintf('%i', length(handles.plan.numberOfProjections));
 else
     n = 'N/A';
+end
+
+% If dose rate data
+if isfield(handles, 'rate') && ~isempty(handles.rate) && ...
+        isfield(handles.plan, 'numberOfProjections')
+    
+    time = sprintf('%0.1f min', handles.rate.time(end)/60 * handles.repeat + ...
+        handles.delay * (handles.repeat * ...
+        length(handles.plan.numberOfProjections) - 1));
+else
+    time = 'N/A';
 end
 
 % Update plan information table
@@ -37,7 +49,7 @@ data = {
     'Number of Beams'       n
     'Field Size'            width           
     'Total Dose/Fx'         dose
-    'Total Fraction Time'   'N/A'
+    'Total Fraction Time'   time
 };
 set(handles.plan_table, 'Data', data);
 set(handles.plan_table, 'Enable', 'on');
