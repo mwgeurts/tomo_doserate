@@ -105,7 +105,7 @@ end
 for j = 2:repeat
     time((1+(j-1)*length(rate.time)):(j*length(rate.time))) = ...
         time((1+(j-1)*length(rate.time)):(j*length(rate.time))) + ...
-        (j-1) * (max(rate.time) + rate.scale);
+        time((j-1)*length(rate.time));
 end
 time = [0 time(1:end-1)];
 
@@ -131,6 +131,10 @@ if exist('Event', 'file') == 2
     t = tic;
 end
 
+% Store monotonically incrementing time (used for continuous BED calc)
+tc = 0:max(time)/10000:max(time);
+ti = 0:1e-10:1e-6;
+
 % Loop through each non-zero voxel
 for i = 1:n
 
@@ -155,20 +159,20 @@ for i = 1:n
 
     % Execute model function assuming continuous delivery
     if exist('params', 'var')
-        bed.continuous(idx(i)) = model(ones(1,length(drate)-1) * ...
-            sum(drate(1:end-1)) / (length(drate)-1), time, params(i,:));
+        bed.continuous(idx(i)) = model(ones(1,length(tc)-1) * ...
+            sum(drate(1:end-1) .* diff(time)) / tc(end), tc, params(idx(i),:));
     else
-        bed.continuous(idx(i)) = model(ones(1,length(drate)) * ...
-            sum(drate(1:end-1)) / (length(drate)-1), time);
+        bed.continuous(idx(i)) = model(ones(1,length(tc)) * ...
+            sum(drate(1:end-1)) * rate.scale / tc(end), tc);
     end
 
     % Execute model function assuming instantaneous delivery
     if exist('params', 'var')
-        bed.instant(idx(i)) = model(sum(drate(1:end-1) .* diff(time)) / ...
-            1e-10, [0 1e-10], params(idx(i),:));
+        bed.instant(idx(i)) = model(ones(1,length(ti)-1) * ...
+            sum(drate(1:end-1) .* diff(time)) / ti(end), ti, params(idx(i),:));
     else
-        bed.instant(idx(i)) = model(sum(drate(1:end-1) .* diff(time)) / ...
-            1e-10, [0 1e-10]);
+        bed.instant(idx(i)) = model(ones(1,length(ti)-1) * ...
+            sum(drate(1:end-1) .* diff(time)) / ti(end), ti);
     end
 end
 
@@ -184,4 +188,4 @@ if exist('Event', 'file') == 2
 end
 
 % Clear temporary variables
-clear rate structures model params repeat drate time t n i j idx;
+clear rate structures model params repeat drate time t n i j idx ti tc;
