@@ -407,19 +407,16 @@ if isfield(handles, 'rate') && ~isempty(handles.rate)
         'params', params, 'repeat', handles.repeat, 'structures', ...
         handles.image.structures, 'time', time);
     
-    % Update info table with total time
-    data = get(handles.plan_table, 'Data');
-    data{9,2} = sprintf('%0.1f min', handles.rate.time(end)/60 + ...
-        handles.delay * (handles.repeat * ...
-        length(handles.plan.numberOfProjections) - 1));
-    set(handles.plan_table, 'Data', data);
-    
-    % Update stats table
-    
-    
-    % Update plot to show BED
-    set(handles.tcs_menu, 'Value', 3);
+    % Execute UpdateDoseDisplay 
     handles = UpdateDoseDisplay(handles);
+    
+    % Execute UpdateHistogram
+    handles = UpdateHistogram(handles);
+    
+    % Calculate BED structure statistics
+    data = get(handles.struct_table, 'Data');
+    data(:,5:8) = CalcBEDstats(handles.image.structures, handles.bed);
+    set(handles.struct_table, 'Data', data);
     
     % Clear temporary variables
     clear time ab fcn params data;
@@ -529,6 +526,28 @@ function calcdose_button_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% If dose rate data already exists
+if isfield(handles, 'rate') && ~isempty(handles.rate)
+   
+    % Ask the user if they want to clear it
+    a = questdlg(['Calculated dose rate data already exists. Would you ', ...
+        'like to clear it and re-compute?'], ...
+        'Recompute Dose', 'Yes','No','No');
+    
+    % If they say yes, clear the rate and BED data
+    if strcmp(a, 'Yes')
+        handles.rate = [];
+        handles.bed = [];
+    
+    % Otherwise, stop here
+    else
+        return;
+    end
+    
+    % Clear temporary variables
+    clear a ;
+end
+
 % Log action
 Event('Preparing inputs for dose rate calculation');
 
@@ -541,9 +560,14 @@ handles.rate = CalcDoseRate('image', handles.image, 'plan', ...
     handles.config.MODEL_PATH, 'downsample', ...
     handles.config.DOWNSAMPLE_FACTOR);
 
-% Log completion
-Event(['Dose rates have now been calculated. You may now proceed to ', ...
-    'compute BED histograms for each structure.']);
+% Execute UpdatePlanTable
+handles = UpdatePlanTable(handles);
+
+% Execute UpdateDoseDisplay
+handles = UpdateDoseDisplay(handles);
+
+% Execute UpdateHistogram
+handles = UpdateHistogram(handles);
 
 % Enable calculate BED button
 set(handles.calcbed_button, 'Enable', 'on');
@@ -551,8 +575,9 @@ set(handles.calcbed_button, 'Enable', 'on');
 % Change load button to save
 set(handles.loadmat_button, 'String', 'Save Stored Dose Rate');
 
-% Clear temporary variables
-clear i mask;
+% Log completion
+Event(['Dose rates have now been calculated. You may now proceed to ', ...
+    'compute BED histograms for each structure.']);
 
 % Update handles structure
 guidata(hObject, handles);
@@ -572,6 +597,15 @@ else
     
     % Execute LoadDoseRateFile()
     handles = LoadDoseRateFile(handles);
+
+    % Execute UpdatePlanTable
+    handles = UpdatePlanTable(handles);
+
+    % Execute UpdateDoseDisplay
+    handles = UpdateDoseDisplay(handles);
+
+    % Execute UpdateHistogram
+    handles = UpdateHistogram(handles);
 end
 
 % Update handles structure
@@ -616,13 +650,25 @@ function params_table_CellEditCallback(hObject, ~, handles)
 %       value for Data
 % handles    structure with handles and user data (see GUIDATA)
 
+% Clear BED
+handles.bed = [];
+
 % Execute UpdateBEDmodel
 handles = UpdateBEDmodel(handles);
 
-% If the average dose rate display is being shown, update it
-if get(handles.tcs_menu, 'Value') == 3
-    handles = UpdateDoseDisplay(handles);
-end
+% Execute UpdatePlanTable
+handles = UpdatePlanTable(handles);
+
+% Execute UpdateDoseDisplay
+handles = UpdateDoseDisplay(handles);
+
+% Execute UpdateHistogram
+handles = UpdateHistogram(handles);
+
+% Clear BED structure statistics
+data = get(handles.struct_table, 'Data');
+data(:,5:8) = cell(length(handles.image.structures), 4);
+set(handles.struct_table, 'Data', data);
 
 % Update handles structure
 guidata(hObject, handles);
@@ -655,7 +701,7 @@ if eventdata.Indices(2) == 2
     end
     
     % Update edited Dx/Vx statistic
-    handles.dvh.UpdatePlot('data', data);
+    handles.histogram.UpdatePlot('data', data);
 
 % Otherwise, if alpha/beta was changed and differs
 elseif eventdata.Indices(2) == 3 && ~isempty(eventdata.NewData)
