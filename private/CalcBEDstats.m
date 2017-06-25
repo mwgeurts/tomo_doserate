@@ -11,40 +11,33 @@ for i = 1:length(structures)
    
     % If variable BED data exists
     if ~isempty(bed) && isfield(bed, 'variable')
-        
-        % Compute variable mean BED
-        varmean = mean(bed.variable(structures{i}.mask == 1));
-        
+
         % Store variable mean BED
-        stats{i,1} = sprintf('%0.1f Gy', varmean);
+        stats{i,1} = sprintf('%0.1f Gy', ...
+            mean(bed.variable(structures{i}.mask == 1)));
     end
     
     % If instant BED data exists
     if ~isempty(bed) && isfield(bed, 'instant')
-        
-        % Compute instant mean BED
-        instmean = mean(bed.instant(structures{i}.mask == 1));
-        
+
         % Store variable mean BED
-        stats{i,2} = sprintf('%0.1f Gy', instmean);
+        stats{i,2} = sprintf('%0.1f Gy', ...
+            mean(bed.instant(structures{i}.mask == 1)));
     end
     
     % If continuous BED data exists
     if ~isempty(bed) && isfield(bed, 'continuous')
         
-        % Store continuous mean
-        contmean = mean(bed.continuous(structures{i}.mask == 1));
-        
         % Store variable mean BED
-        stats{i,3} = sprintf('%0.1f Gy', contmean);
+        stats{i,3} = sprintf('%0.1f Gy', ...
+            mean(bed.continuous(structures{i}.mask == 1)));
     end
     
-    % If variable and continuous BED data exists
-    if ~isempty(bed) && isfield(bed, 'variable') && ...
-            isfield(bed, 'continuous')
-        
-        % Store variable mean BED
-        stats{i,4} = '';
+    % If equivalent dose rate BED data exists
+    if ~isempty(bed) && isfield(bed, 'equivdr')
+  
+        % Store equivalent dose rate
+        stats{i,4} = sprintf('%0.1f Gy/min', ...
+            mean(bed.equivdr(structures{i}.mask == 1)) * 60);
     end
-    
 end
