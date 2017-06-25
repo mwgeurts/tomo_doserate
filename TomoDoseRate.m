@@ -407,6 +407,10 @@ if isfield(handles, 'rate') && ~isempty(handles.rate)
         'params', params, 'repeat', handles.repeat, 'structures', ...
         handles.image.structures, 'time', time);
     
+    % Execute CalcEquivDoseRate(), storing results to bed structure
+    handles.bed.equivdr = CalcEquivDoseRate(handles.bed.variable, ...
+        func2str(fcn), params);
+    
     % Execute UpdateDoseDisplay 
     handles = UpdateDoseDisplay(handles);
     
