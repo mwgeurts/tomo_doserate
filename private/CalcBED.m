@@ -109,6 +109,9 @@ for j = 2:repeat
 end
 time = [0 time(1:end-1)];
 
+% Store total time
+bed.time = time(end);
+
 % Repeat parameters, if not already repeated
 if exist('params', 'var') && size(params, 1) == 1 
    params = repmat(params, n, 1); 
@@ -132,7 +135,7 @@ if exist('Event', 'file') == 2
 end
 
 % Store monotonically incrementing time (used for continuous BED calc)
-tc = 0:max(time)/10000:max(time);
+tc = 0:time(end)/10000:time(end);
 ti = 0:1e-10:1e-6;
 
 % Loop through each non-zero voxel
@@ -152,27 +155,27 @@ for i = 1:n
 
     % Execute model function for variable dose rate
     if exist('params', 'var')
-        bed.variable(idx(i)) = model(drate(1:end-1), time, params(idx(i),:));
+        bed.variable(idx(i)) = model(drate, time, params(idx(i),:));
     else
-        bed.variable(idx(i)) = model(drate(1:end-1), time);
+        bed.variable(idx(i)) = model(drate, time);
     end
 
     % Execute model function assuming continuous delivery
     if exist('params', 'var')
-        bed.continuous(idx(i)) = model(ones(1,length(tc)-1) * ...
-            sum(drate(1:end-1) .* diff(time)) / tc(end), tc, params(idx(i),:));
+        bed.continuous(idx(i)) = model(ones(1,length(tc)) * ...
+            sum(drate .* diff(time)) / tc(end), tc, params(idx(i),:));
     else
         bed.continuous(idx(i)) = model(ones(1,length(tc)) * ...
-            sum(drate(1:end-1)) * rate.scale / tc(end), tc);
+            sum(drate .* diff(time)) / tc(end), tc);
     end
 
     % Execute model function assuming instantaneous delivery
     if exist('params', 'var')
-        bed.instant(idx(i)) = model(ones(1,length(ti)-1) * ...
-            sum(drate(1:end-1) .* diff(time)) / ti(end), ti, params(idx(i),:));
+        bed.instant(idx(i)) = model(ones(1,length(ti)) * ...
+            sum(drate .* diff(time)) / ti(end), ti, params(idx(i),:));
     else
-        bed.instant(idx(i)) = model(ones(1,length(ti)-1) * ...
-            sum(drate(1:end-1) .* diff(time)) / ti(end), ti);
+        bed.instant(idx(i)) = model(ones(1,length(ti)) * ...
+            sum(drate .* diff(time)) / ti(end), ti);
     end
 end
 
