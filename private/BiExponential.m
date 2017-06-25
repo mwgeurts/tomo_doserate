@@ -38,13 +38,13 @@ h = params(2:3) * 3600;
 p = params(4:5);
 
 % Compute integral dose, in Gy
-d = sum(drate .* diff(time));
+d = sum(drate(1:end-1) .* diff(time));
 
 % Compute dose protraction factors
-g(1) = 2 * sum(drate .* diff(time) .* cumsum(exp(-log(2)/h(1) * ...
-    time(1:end-1)) .* diff(time) .* drate)) / (d ^ 2);
-g(2) = 2 * sum(drate .* diff(time) .* cumsum(exp(-log(2)/h(2) * ...
-    time(1:end-1)) .* diff(time) .* drate)) / (d ^ 2);
+g(1) = 2 * sum(drate(1:end-1) .* diff(time) .* cumsum(exp(-log(2)/h(1) * ...
+    time(1:end-1)) .* diff(time) .* drate(1:end-1))) / (d ^ 2);
+g(2) = 2 * sum(drate(1:end-1) .* diff(time) .* cumsum(exp(-log(2)/h(2) * ...
+    time(1:end-1)) .* diff(time) .* drate(1:end-1))) / (d ^ 2);
 
 % Compute BED as weighted sum of both components
 bed = sum(p .* (1 + g * d / ab) * d) / sum(p);
