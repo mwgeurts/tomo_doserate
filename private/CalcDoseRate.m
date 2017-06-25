@@ -175,7 +175,6 @@ n = size(plan.sinogram, 2);
 rate.sparse = spalloc(numel(image.data), n + length(plan.trimmedLengths), ...
     length(find(rate.mask)) * 20);
 
-
 % Store the time vector
 rate.time = (1:(n + length(plan.trimmedLengths))) * rate.scale;
 
@@ -218,9 +217,12 @@ d = CalcDose(image, modplan, 'modelfolder', modelfolder, ...
     'downsample', downsample);
 dose = reshape(d.data .* rate.mask / plan.fractions, 1, []);
 
+% Store cumulative dose as calculated
+cdose = d.data;
+
 % Store previous dose as calculated minus values less than the threshold
-prevdose = dose;
-prevdose(dose <= thresh) = 0;
+pdose = dose;
+pdose(dose <= thresh) = 0;
 
 % Store dose rates greater than the threshold
 rate.sparse(dose > thresh, 1) = dose(dose > thresh);
@@ -243,19 +245,26 @@ for i = 2:n
     end
 
     % Update modified sinogram to the delivery up to this projection
-    modplan.sinogram = horzcat(plan.sinogram(:, 1:i), ...
-        zeros(size(plan.sinogram, 1), n-i));
+    modplan.sinogram = horzcat(zeros(size(plan.sinogram, 1), i-1), ...
+        plan.sinogram(:, i), zeros(size(plan.sinogram, 1), n-i));
 
     % Calculate fraction dose again (not copying the image data)
     d = CalcDose(modplan);
-    dose = reshape(d.data .* rate.mask / plan.fractions, 1, []);
     
-    % Store dose differences (relative to previous dose) greater than threshold
-    rate.sparse((dose - prevdose) > thresh, i + find(i <= l, 1) - 1) = ...
-        dose((dose - prevdose) > thresh) - prevdose((dose - prevdose) > thresh);
+    % Add to cumulative dose
+    cdose = cdose + d.data;
+    
+    % Compute new dose as the masked cumulative fraction dose up to this
+    % projection
+    dose = reshape(cdose .* rate.mask / plan.fractions, 1, []);
+    
+    % Store dose differences (relative to previous dose) greater than 
+    % threshold
+    rate.sparse((dose - pdose) > thresh, i + find(i <= l, 1) - 1) = ...
+        dose((dose - pdose) > thresh) - pdose((dose - pdose) > thresh);
     
     % Update previous dose
-    prevdose((dose - prevdose) > thresh) = dose((dose - prevdose) > thresh);
+    pdose((dose - pdose) > thresh) = dose((dose - pdose) > thresh);
 end
 
 % Compute the RMS error
