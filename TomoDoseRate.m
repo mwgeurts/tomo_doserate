@@ -409,7 +409,7 @@ if isfield(handles, 'rate') && ~isempty(handles.rate)
     
     % Execute CalcEquivDoseRate(), storing results to bed structure
     handles.bed.equivdr = CalcEquivDoseRate(handles.bed.variable, ...
-        func2str(fcn), params);
+        handles.bed.time, func2str(fcn), params);
     
     % Execute UpdateDoseDisplay 
     handles = UpdateDoseDisplay(handles);

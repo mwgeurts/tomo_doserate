@@ -1,14 +1,17 @@
-function equivdr = CalcEquivDoseRate(bed, model, params)
+function equivdr = CalcEquivDoseRate(bed, time, model, params)
 % CalcEquivDoseRate computes the equivalent continuous irradiation rate
 % on a voxel to voxel basis given an expected BED. This is used by 
 % TomoDoseRate to compute the equivalent dose rate for each structure.
 % Upon successful completion, a 3D volume of the same dimensions as the
-% provided "bed" input argument is returned.
+% provided "bed" input argument is returned containing the dose rate, in
+% Gy/sec.
 %
 % The following inputs are required:
 %
 %   bed:    a 3D volume of expected BED values from which to compute the
 %           equivalent dose rate for.
+%   time:   double indicating the time, in seconds, during which the
+%           continuous dose rate is computed.
 %   model:  a string indicating which model to use when computing the
 %           equivalent dose rate. See the switch statement below for a list
 %           of available dose rates.
@@ -55,22 +58,24 @@ switch model
         ab = params(:, 1);
 
         % Define half lives, in seconds
-        h = params(:, 2:3) * 3600;
+        h = params(:, 2:3);
 
         % Define proportions
         p = params(:, 4:5);
         
         % Compute dose protraction factors for continuous irradiation
-        g = 2 * h ./ (log(2) * t) .* (1 - h ./ (log(2) * t) .* ...
-            (1 - exp(-t .* log(2) ./ h)));
+        g = 2 * h ./ (log(2) * time) .* (1 - h ./ (log(2) * time) .* ...
+            (1 - exp(-time .* log(2) ./ h)));
         
         % Solve quadratic equation (there will be two solutions)
-        a = -g(:,1) ./ (2 * ab) + sqrt((g(:,1) ./ ab) .^ 2 + 4 * ...
-            reshape(bed, 1, []));
-        b = -g(:,1) ./ (2 * ab) - sqrt((g(:,1) ./ ab) .^ 2 + 4 * ...
-            reshape(bed, 1, []));
+        d1 = -sum(p .* g ./ sum(p,2), 2) ./ (2 * ab) + ...
+            sqrt((sum(p .* g ./ sum(p,2), 2) ./ ab) .^ 2 + 4 * ...
+            reshape(bed, [], 1));
+        d2 = -sum(p .* g ./ sum(p,2), 2) ./ (2 * ab) - ...
+            sqrt((sum(p .* g ./ sum(p,2), 2) ./ ab) .^ 2 + 4 * ...
+            reshape(bed, [], 1));
         
         % Store the larger of the two
-        equivdr = reshape(max(a, b), size(bed.variable));
+        equivdr = reshape(max(d1, d2), size(bed)) / time;
         
 end
