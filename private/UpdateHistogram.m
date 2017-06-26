@@ -45,6 +45,7 @@ plotoptions = {
     'Biologically Effective Dose Histogram'
     'Instantaneous BED Histogram'
     'Continuous Dose BED Histogram'
+    'Equivalent Continuous Dose Rate Histogram'
 };
 
 % If no input arguments are provided
@@ -194,6 +195,24 @@ switch get(handles.hist_menu, 'Value')
                 struct('data', handles.bed.continuous, 'width', ...
                 handles.dose.width), 'xlabel', ...
                 'Equivalent Continuous Dose Rate BED (Gy)');
+        else
+            Event('Histogram not plotted as BED data does not exist');
+        end
+        
+    % Equivalent Continuous Dose Rate histogram
+    case 8
+        
+        % Log plot selection
+        Event('Equivalent continuous dose rate histogram selected');
+        
+        % If a DVHViewer object exists, update it
+        if isfield(handles, 'histogram') && isfield(handles, 'bed') && ...
+                isfield(handles.bed, 'equivdr')
+           
+            handles.histogram.Calculate('doseA', ...
+                struct('data', handles.bed.equivdr * 6000, 'width', ...
+                handles.dose.width), 'xlabel', ...
+                'Equivalent Continuous Dose Rate (cGy/min)');
         else
             Event('Histogram not plotted as BED data does not exist');
         end
