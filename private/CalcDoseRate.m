@@ -170,10 +170,10 @@ end
 l = cumsum(l);
 
 % Initialize return structure sparse matrix, estimating each masked voxel 
-% to be irradiated across 20 projections.
+% to be irradiated across 100 projections.
 n = size(plan.sinogram, 2);
 rate.sparse = spalloc(numel(image.data), n + length(plan.trimmedLengths), ...
-    length(find(rate.mask)) * 20);
+    length(find(rate.mask)) * 100);
 
 % Store the time vector
 rate.time = (1:(n + length(plan.trimmedLengths))) * rate.scale;
