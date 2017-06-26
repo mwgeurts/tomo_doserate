@@ -28,11 +28,11 @@ function bed = BiExponential(drate, time, params)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
-% Define alpha/beta ratio in Gy
+% Define alpha/beta ratio, in Gy
 ab = params(1);
 
 % Define half lives, in seconds
-h = params(2:3) * 3600;
+h = params(2:3);
 
 % Define proportions
 p = params(4:5);

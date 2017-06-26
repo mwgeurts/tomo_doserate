@@ -124,8 +124,8 @@ switch get(handles.model_menu, 'Value')
         handles.ratios{2,1} = sscanf(params{1,2}, '%f');
         handles.ratios{2,2} = sscanf(params{1,2}, '%f');
         handles.ratios{2,3} = sscanf(params{2,2}, '%f');
-        handles.half(1) = sscanf(params{3,2}, '%f');
-        handles.half(2) = sscanf(params{4,2}, '%f');
+        handles.half(1) = sscanf(params{3,2}, '%f') * 3600;
+        handles.half(2) = sscanf(params{4,2}, '%f') * 3600;
         handles.prop = str2double(strsplit(params{5,2}, ':')) / 100;
         handles.delay = sscanf(params{6,2}, '%f');
         handles.repeat = round(sscanf(params{7,2}, '%f'), 0);
@@ -142,12 +142,15 @@ switch get(handles.model_menu, 'Value')
 
             % Display warning
             warndlg('The proportion must be in the format 50:50');
+            Event('The proportion must be in the format 50:50', 'WARN');
         
         elseif ~(handles.prop(1) >= 0 && handles.prop(2) >= 0 && ...
                 sum(handles.prop) == 1)
             
             % Display warning
             warndlg('The proportions must sum to 100 and be non-negative');
+            Event('The proportions must sum to 100 and be non-negative', ...
+                'WARN');
             
         elseif ~(handles.ratios{2,1} >= 0 && handles.ratios{2,3} >= 0 && ...
                 handles.half(1) >= 0 && handles.half(2) >= 0)
@@ -155,19 +158,23 @@ switch get(handles.model_menu, 'Value')
             % Display warning
             warndlg(['The alpha/beta and half life values must be ', ...
                 'greater than or equal to zero']);
+            Event(['The alpha/beta and half life values must be ', ...
+                'greater than or equal to zero'], 'WARN');
             
         elseif handles.repeat <= 0
 
             % Display warning
             warndlg(['The number of times all beams are delivered must be ', ...
                 'greater than zero']);
+            Event(['The number of times all beams are delivered must be ', ...
+                'greater than zero'], 'WARN');
         else
             
             % Re-format table
             params{1,2} = sprintf('%0.1f', handles.ratios{2,1});
             params{2,2} = sprintf('%0.1f', handles.ratios{2,3});
-            params{3,2} = sprintf('%0.1f hr', handles.half(1));
-            params{4,2} = sprintf('%0.1f hr', handles.half(2));
+            params{3,2} = sprintf('%0.1f hr', handles.half(1)/3600);
+            params{4,2} = sprintf('%0.1f hr', handles.half(2)/3600);
             params{5,2} = sprintf('%0.0f:%0.0f', handles.prop(1)*100, ...
                 handles.prop(2)*100);
             params{6,2} = sprintf('%0.1f min', handles.delay);
@@ -190,7 +197,7 @@ switch get(handles.model_menu, 'Value')
             d = [2 5 10 20];
 
             % Compute dose protraction factors
-            h = repmat(handles.half', 1, length(time));
+            h = repmat(handles.half', 1, length(time)) / 3600;
             t = repmat(time, length(handles.half), 1);
             g = 2 * h ./ (log(2) * t) .* (1 - h ./ (log(2) * t) .* ...
                 (1 - exp(-t .* log(2) ./ h)));
