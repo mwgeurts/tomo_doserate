@@ -1,5 +1,5 @@
-function stats = CalcBEDstats(structures, bed)
-% CalcBEDstats computes the mean BED and effective dose rate for each
+function stats = UpdateBEDstats(structures, bed)
+% UpdateBEDstats computes the mean BED and effective dose rate for each
 % structure in the provided structures cell array. The values are returned
 % as a formatted cell array of strings
 
