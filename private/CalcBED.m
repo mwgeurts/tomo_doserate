@@ -29,6 +29,8 @@ function bed = CalcBED(varargin)
 % The following structure fields are returned upon successful completion:
 %
 %   model:          string containing the name of the function handle
+%   time:           double of the total treatment time, in seconds, of
+%                   variable and/or continuous delivery 
 %   variable:       3D array of size defined by rate.indices of BED
 %                   computed using the dose rates for each voxel in
 %                   rate.sparse.
@@ -141,7 +143,7 @@ ti = 0:1e-10:1e-6;
 % Loop through each non-zero voxel
 for i = 1:n
 
-    % Update waitbar if 2% progress has been made
+    % Update waitbar only if 2% progress has been made
     if i/n - c > 0.02 && exist('progress', 'var') && ishandle(progress)
         c = i/n;        
         r = (n-i) * toc(t) / i;
@@ -152,6 +154,9 @@ for i = 1:n
         
     % Convert and repeat dose rate
     drate = repmat(full(rate.sparse(idx(i), :)), 1, repeat);
+    
+    % Store cumulative dose
+    dose = sum(drate(1:end-1) .* diff(time));
 
     % Execute model function for variable dose rate
     if exist('params', 'var')
@@ -163,19 +168,19 @@ for i = 1:n
     % Execute model function assuming continuous delivery
     if exist('params', 'var')
         bed.continuous(idx(i)) = model(ones(1,length(tc)) * ...
-            sum(drate .* diff(time)) / tc(end), tc, params(idx(i),:));
+            dose / tc(end), tc, params(idx(i),:));
     else
         bed.continuous(idx(i)) = model(ones(1,length(tc)) * ...
-            sum(drate .* diff(time)) / tc(end), tc);
+            dose / tc(end), tc);
     end
 
     % Execute model function assuming instantaneous delivery
     if exist('params', 'var')
         bed.instant(idx(i)) = model(ones(1,length(ti)) * ...
-            sum(drate .* diff(time)) / ti(end), ti, params(idx(i),:));
+            dose / ti(end), ti, params(idx(i),:));
     else
         bed.instant(idx(i)) = model(ones(1,length(ti)) * ...
-            sum(drate .* diff(time)) / ti(end), ti);
+            dose / ti(end), ti);
     end
 end
 
