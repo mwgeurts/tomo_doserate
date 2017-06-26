@@ -30,6 +30,7 @@ plotoptions = {
     'Biologically Effective Dose (Gy)'
     'Instantaneous BED (Gy)'
     'Continuous Dose BED (Gy)'
+    'Equivalent Dose Rate (cGy/min)'
 };
 
 % If no input arguments are provided
@@ -223,6 +224,32 @@ switch get(handles.tcs_menu, 'Value')
         else
             % Log why plot was not displayed
             Event('BED not displayed as no data exists');
+        end
+        
+    % Equivalent dose rate display
+    case 8
+        
+        % Log plot selection
+        Event('Equivalent dose rate plot selected');
+        
+        % Check if the BED and image are loaded
+        if isfield(handles, 'image') && ...
+                isfield(handles.image, 'data') ...
+                && isfield(handles, 'bed') && ...
+                isfield(handles.bed, 'equivdr')
+                
+            % Re-initialize plot with new overlay data
+            handles.tcsplot.Initialize('overlay', struct('data', ...
+                handles.bed.equivdr * 6000, 'start', handles.image.start, ...
+                'width', handles.image.width, 'dimensions', ...
+                handles.image.dimensions));
+            
+            % Enable transparency and TCS inputs
+            set(handles.alpha, 'visible', 'on');
+            set(handles.tcs_button, 'visible', 'on');
+        else
+            % Log why plot was not displayed
+            Event('Equivalent dose rate not displayed as no data exists');
         end
 end
 
