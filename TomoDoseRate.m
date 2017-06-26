@@ -377,39 +377,34 @@ if isfield(handles, 'rate') && ~isempty(handles.rate)
     time = InjectBeamDelay(handles.rate.time, handles.plan, ...
         handles.delay * 60);
 
-    % Get table contents
-    t = get(handles.struct_table, 'Data');
+    % Get structure table contents
+    struct = get(handles.struct_table, 'Data');
 
-    % Calculate alpha/beta ratio for each voxel
-    ab = SetAlphaBetaRatio(handles.ratios, ...
-        handles.image.structures, t(:,3));
-    
-    % Execute code block based on display GUI item value
-    switch get(handles.model_menu, 'Value')
+    % Set parameters based on selected model
+    switch handles.model
 
         % Bi-exponential BED model
-        case 1
-            
-            % Store function handle
-            fcn = @BiExponential;
-            
+        case 'BiExponential'
+
             % Store remaining model parameters
-            params = horzcat(reshape(ab, [], 1), repmat(handles.half, ...
-                numel(handles.image.data), 1), repmat(handles.prop, ...
-                numel(handles.image.data), 1));
+            params = horzcat(reshape(SetAlphaBetaRatio(handles.ratios, ...
+                handles.image.structures, struct(:,3)), [], 1), ...
+                repmat(handles.half, numel(handles.image.data), 1), ...
+                repmat(handles.prop, numel(handles.image.data), 1));
             
             % Clear temporary variables
-            clear t ab;
+            clear ab;
     end
         
     % Execute CalcBED()
-    handles.bed = CalcBED('rate', handles.rate, 'model', fcn, ...
-        'params', params, 'repeat', handles.repeat, 'structures', ...
-        handles.image.structures, 'time', time);
+    handles.bed = CalcBED('rate', handles.rate, 'model', ...
+        str2func(handles.model), 'params', params, 'repeat', ...
+        handles.repeat, 'structures', handles.image.structures, ...
+        'time', time);
     
     % Execute CalcEquivDoseRate(), storing results to bed structure
     handles.bed.equivdr = CalcEquivDoseRate(handles.bed.variable, ...
-        handles.bed.time, func2str(fcn), params);
+        handles.bed.time, handles.model, params) .* handles.rate.mask;
     
     % Execute UpdateDoseDisplay 
     handles = UpdateDoseDisplay(handles);
@@ -417,13 +412,13 @@ if isfield(handles, 'rate') && ~isempty(handles.rate)
     % Execute UpdateHistogram
     handles = UpdateHistogram(handles);
     
-    % Calculate BED structure statistics
+    % Calculate and store BED structure statistics
     data = get(handles.struct_table, 'Data');
-    data(:,5:8) = CalcBEDstats(handles.image.structures, handles.bed);
+    data(:,5:8) = UpdateBEDstats(handles.image.structures, handles.bed);
     set(handles.struct_table, 'Data', data);
     
     % Clear temporary variables
-    clear time ab fcn params data;
+    clear time params data struct;
 end
 
 % Update handles structure

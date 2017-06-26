@@ -51,20 +51,19 @@ else
     Event('Incorrect number of inputs to UpdateBEDmodel', 'ERROR');
 end
 
+% Log choice
+models = get(handles.model_menu, 'String');
+Event([models{get(handles.model_menu, 'Value')}, ' model selected']);
+
 % Execute code block based on display GUI item value
 switch get(handles.model_menu, 'Value')
     
     % Bi-exponential BED model
     case 1
         
-        % If the model was changed
+        % If the model was changed, reload default values
         if ~isfield(handles, 'model') || ...
                 get(handles.model_menu, 'Value') ~= handles.model
-            
-            % Log choice
-            models = get(handles.model_menu, 'String');
-            Event([models{get(handles.model_menu, 'Value')}, ...
-                    ' model selected']);
             
             % Update table parameters 
             params = cell(7,2);
@@ -119,6 +118,9 @@ switch get(handles.model_menu, 'Value')
             % Get table contents
             params = get(handles.params_table, 'Data');
         end
+        
+        % Store model function
+        handles.model = 'BiExponential';
         
         % Parse out parameters
         handles.ratios{2,1} = sscanf(params{1,2}, '%f');
