@@ -25,8 +25,8 @@ function varargout = UpdateDoseDisplay(varargin)
 plotoptions = {
     ''
     'Planned Dose (Gy)'
-    'Average Dose Rate (Gy/sec)'
-    'Maximum Dose Rate (Gy/sec)'
+    'Average Dose Rate (cGy/min)'
+    'Maximum Dose Rate (cGy/min)'
     'Biologically Effective Dose (Gy)'
     'Instantaneous BED (Gy)'
     'Continuous Dose BED (Gy)'
@@ -109,7 +109,7 @@ switch get(handles.tcs_menu, 'Value')
             
             % Re-initialize plot with new overlay data
             handles.tcsplot.Initialize('overlay', struct('data', ...
-                handles.rate.average * s, 'start', handles.image.start, ...
+                handles.rate.average * 6000 * s, 'start', handles.image.start, ...
                 'width', handles.image.width, 'dimensions', ...
                 handles.image.dimensions));
             
@@ -135,7 +135,7 @@ switch get(handles.tcs_menu, 'Value')
                 
             % Re-initialize plot with new overlay data
             handles.tcsplot.Initialize('overlay', struct('data', ...
-                handles.rate.max, 'start', handles.image.start, ...
+                handles.rate.max * 6000, 'start', handles.image.start, ...
                 'width', handles.image.width, 'dimensions', ...
                 handles.image.dimensions));
             
