@@ -34,10 +34,11 @@ for i = 1:length(structures)
     end
     
     % If equivalent dose rate BED data exists
-    if ~isempty(bed) && isfield(bed, 'equivdr')
+    if ~isempty(bed) && isfield(bed, 'equivdr') && ...
+            max(max(max(bed.equivdr))) > 0
   
         % Store equivalent dose rate
-        stats{i,4} = sprintf('%0.2f cGy/min', ...
-            mean(bed.equivdr(structures{i}.mask == 1)) * 6000);
+        stats{i,4} = sprintf('%0.3f Gy/min', ...
+            mean(bed.equivdr(structures{i}.mask == 1)) * 60);
     end
 end

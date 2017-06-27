@@ -25,12 +25,12 @@ function varargout = UpdateDoseDisplay(varargin)
 plotoptions = {
     ''
     'Planned Dose (Gy)'
-    'Average Dose Rate (cGy/min)'
-    'Maximum Dose Rate (cGy/min)'
+    'Average Dose Rate (Gy/min)'
+    'Maximum Dose Rate (Gy/min)'
     'Biologically Effective Dose (Gy)'
     'Instantaneous BED (Gy)'
     'Continuous Dose BED (Gy)'
-    'Equivalent Dose Rate (cGy/min)'
+    'Equivalent Dose Rate (Gy/min)'
 };
 
 % If no input arguments are provided
@@ -110,7 +110,7 @@ switch get(handles.tcs_menu, 'Value')
             
             % Re-initialize plot with new overlay data
             handles.tcsplot.Initialize('overlay', struct('data', ...
-                handles.rate.average * 6000 * s, 'start', handles.image.start, ...
+                handles.rate.average * 60 * s, 'start', handles.image.start, ...
                 'width', handles.image.width, 'dimensions', ...
                 handles.image.dimensions));
             
@@ -136,7 +136,7 @@ switch get(handles.tcs_menu, 'Value')
                 
             % Re-initialize plot with new overlay data
             handles.tcsplot.Initialize('overlay', struct('data', ...
-                handles.rate.max * 6000, 'start', handles.image.start, ...
+                handles.rate.max * 60, 'start', handles.image.start, ...
                 'width', handles.image.width, 'dimensions', ...
                 handles.image.dimensions));
             
@@ -240,7 +240,7 @@ switch get(handles.tcs_menu, 'Value')
                 
             % Re-initialize plot with new overlay data
             handles.tcsplot.Initialize('overlay', struct('data', ...
-                handles.bed.equivdr * 6000, 'start', handles.image.start, ...
+                handles.bed.equivdr * 60, 'start', handles.image.start, ...
                 'width', handles.image.width, 'dimensions', ...
                 handles.image.dimensions));
             

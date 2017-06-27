@@ -122,8 +122,8 @@ switch get(handles.hist_menu, 'Value')
                 length(handles.plan.numberOfProjections) - 1));
         
             handles.histogram.Calculate('doseA', ...
-                struct('data', handles.rate.average * s, ...
-                'width', handles.dose.width), 'xlabel', 'Dose Rate (Gy/sec)');
+                struct('data', handles.rate.average * s * 60, ...
+                'width', handles.dose.width), 'xlabel', 'Dose Rate (Gy/min)');
         else
             Event('Histogram not plotted as dose rate data does not exist');
         end
@@ -139,8 +139,8 @@ switch get(handles.hist_menu, 'Value')
                 isfield(handles.rate, 'max')
            
             handles.histogram.Calculate('doseA', ...
-                struct('data', handles.rate.max, 'width', ...
-                handles.dose.width), 'xlabel', 'Dose Rate (Gy/sec)');
+                struct('data', handles.rate.max * 60, 'width', ...
+                handles.dose.width), 'xlabel', 'Dose Rate (Gy/min)');
         else
             Event('Histogram not plotted as dose rate data does not exist');
         end
