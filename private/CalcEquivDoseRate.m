@@ -48,6 +48,9 @@ if exist('Event', 'file') == 2
         numel(bed)));
 end
 
+% Initialize empty return array
+equivdr = zeros(size(bed));
+
 % Compute equivalent dose rate based off model function
 switch model
     
