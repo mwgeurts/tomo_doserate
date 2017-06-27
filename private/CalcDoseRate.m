@@ -275,7 +275,7 @@ end
 
 % Compute the average dose rate using cumulative dose
 rate.average = reshape(dose, size(image.data,1), ...
-    size(image.data, 2), size(image.data,3)) ./ (n * plan.scale);
+    size(image.data, 2), size(image.data,3)) ./ (n * rate.scale);
 
 % Divide the dose values by time to compute rate
 rate.sparse = rate.sparse ./ rate.scale;
