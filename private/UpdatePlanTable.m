@@ -1,6 +1,11 @@
 function handles = UpdatePlanTable(handles)
 
 
+% If plan data does not exist, just return
+if ~isfield(handles, 'plan') || isempty(handles.plan)
+    return;
+end
+
 % Fill in missing data
 if ~isfield(handles.plan, 'machine')
     handles.plan.machine = '';

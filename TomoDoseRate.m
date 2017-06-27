@@ -655,19 +655,24 @@ handles.bed = [];
 % Execute UpdateBEDmodel
 handles = UpdateBEDmodel(handles);
 
-% Execute UpdatePlanTable
-handles = UpdatePlanTable(handles);
+% If plan data exists
+if isfield(handles, 'plan') && ~isempty(handles.plan)
 
-% Execute UpdateDoseDisplay
-handles = UpdateDoseDisplay(handles);
+    % Execute UpdatePlanTable
+    handles = UpdatePlanTable(handles);
 
-% Execute UpdateHistogram
-handles = UpdateHistogram(handles);
+    % Execute UpdateDoseDisplay
+    handles = UpdateDoseDisplay(handles);
 
-% Clear BED structure statistics
-data = get(handles.struct_table, 'Data');
-data(:,5:8) = cell(length(handles.image.structures), 4);
-set(handles.struct_table, 'Data', data);
+    % Execute UpdateHistogram
+    handles = UpdateHistogram(handles);
+
+    % Clear BED structure statistics
+    data = get(handles.struct_table, 'Data');
+    data(:,5:8) = cell(size(data, 1), 4);
+    set(handles.struct_table, 'Data', data);
+
+end
 
 % Update handles structure
 guidata(hObject, handles);
