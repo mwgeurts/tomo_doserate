@@ -22,16 +22,16 @@ function varargout = UpdateBEDmodel(varargin)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
-% Specify model options and order
+% Specify model options and associated functions
 modeloptions = {
-    'Bi-exponential BED'
+    'Bi-exponential BED',   'BiExponential'
 };
 
 % If no input arguments are provided
 if nargin == 0
     
     % Return the plot options
-    varargout{1} = modeloptions;
+    varargout{1} = modeloptions(:,1);
     
     % Stop execution
     return;
@@ -42,8 +42,7 @@ elseif nargin == 1
     % Set input variables
     handles = varargin{1};
 
-    % Log start
-    Event('Updating BED plot display and model params (if changed)');
+    % Start timer
     timer = tic;
     
 % Otherwise, throw an error
@@ -52,18 +51,24 @@ else
 end
 
 % Log choice
-models = get(handles.model_menu, 'String');
-Event([models{get(handles.model_menu, 'Value')}, ' model selected']);
+Event(['Updating ', modeloptions{get(handles.model_menu, 'Value'), 1}, ...
+    ' model']);
+
+% Set model
+handles.model = modeloptions{get(handles.model_menu, 'Value'), 2};
 
 % Execute code block based on display GUI item value
-switch get(handles.model_menu, 'Value')
+switch handles.model
     
     % Bi-exponential BED model
-    case 1
+    case 'BiExponential'
         
         % If the model was changed, reload default values
-        if ~isfield(handles, 'model') || ...
-                get(handles.model_menu, 'Value') ~= handles.model
+        if ~isfield(handles, 'prevmodel') || ...
+                ~strcmp(handles.prevmodel, handles.model)
+            
+            % Log action
+            Event('Loading default model parameters');
             
             % Update table parameters 
             params = cell(7,2);
@@ -108,20 +113,14 @@ switch get(handles.model_menu, 'Value')
             params{7,1} = 'Number of times beams are delivered';
             params{7,2} = '1';
             
-            % Update saved model selection
-            handles.model = get(handles.model_menu, 'Value');
-            
             % Clear temporary variables
-            clear models c;
+            clear c;
         else 
         
             % Get table contents
             params = get(handles.params_table, 'Data');
         end
-        
-        % Store model function
-        handles.model = 'BiExponential';
-        
+
         % Parse out parameters
         handles.ratios{2,1} = sscanf(params{1,2}, '%f');
         handles.ratios{2,2} = sscanf(params{1,2}, '%f');
@@ -300,6 +299,9 @@ switch get(handles.model_menu, 'Value')
             clear params time d h t g bed i j;
         end
 end
+
+% Update previous model
+handles.prevmodel = handles.model;
 
 % Log completion
 Event(sprintf('BED plot updated successfully in %0.3f seconds', toc(timer)));
