@@ -72,6 +72,12 @@ else
     Event('Incorrect number of inputs to UpdateHistogram', 'ERROR');
 end
 
+% Get view modes
+modes = get(handles.histview_menu, 'String');
+s = strsplit(modes{get(handles.histview_menu, 'Value')}, '-');
+type = lower(s{1});
+volume = lower(s{2});
+
 % Clear and set reference to axis
 cla(handles.hist_axes, 'reset');
 axes(handles.hist_axes);
@@ -100,7 +106,7 @@ switch get(handles.hist_menu, 'Value')
             handles.histogram.Calculate('doseA', ...
                 struct('data', handles.dose.data * handles.repeat, ...
                 'width', handles.dose.width), 'xlabel', ...
-                'Fraction Dose (Gy)');
+                'Fraction Dose (Gy)', 'type', type, 'volume', volume);
         else
             Event('Histogram not plotted as plan data does not exist');
         end
@@ -123,7 +129,8 @@ switch get(handles.hist_menu, 'Value')
         
             handles.histogram.Calculate('doseA', ...
                 struct('data', handles.rate.average * s * 60, ...
-                'width', handles.dose.width), 'xlabel', 'Dose Rate (Gy/min)');
+                'width', handles.dose.width), 'xlabel', ...
+                'Dose Rate (Gy/min)', 'type', type, 'volume', volume);
         else
             Event('Histogram not plotted as dose rate data does not exist');
         end
@@ -140,7 +147,8 @@ switch get(handles.hist_menu, 'Value')
            
             handles.histogram.Calculate('doseA', ...
                 struct('data', handles.rate.max * 60, 'width', ...
-                handles.dose.width), 'xlabel', 'Dose Rate (Gy/min)');
+                handles.dose.width), 'xlabel', 'Dose Rate (Gy/min)', ...
+                'type', type, 'volume', volume);
         else
             Event('Histogram not plotted as dose rate data does not exist');
         end
@@ -158,7 +166,8 @@ switch get(handles.hist_menu, 'Value')
             handles.histogram.Calculate('doseA', ...
                 struct('data', handles.bed.variable, 'width', ...
                 handles.dose.width), 'xlabel', ...
-                'Variable Dose Rate Biologically Effective Dose (Gy)');
+                'Variable Dose Rate Biologically Effective Dose (Gy)', ...
+                'type', type, 'volume', volume);
         else
             Event('Histogram not plotted as BED data does not exist');
         end
@@ -176,7 +185,8 @@ switch get(handles.hist_menu, 'Value')
             handles.histogram.Calculate('doseA', ...
                 struct('data', handles.bed.instant, 'width', ...
                 handles.dose.width), 'xlabel', ...
-                'Equivalent Instantaneous Dose BED (Gy)');
+                'Equivalent Instantaneous Dose BED (Gy)', ...
+                'type', type, 'volume', volume);
         else
             Event('Histogram not plotted as BED data does not exist');
         end
@@ -194,7 +204,8 @@ switch get(handles.hist_menu, 'Value')
             handles.histogram.Calculate('doseA', ...
                 struct('data', handles.bed.continuous, 'width', ...
                 handles.dose.width), 'xlabel', ...
-                'Equivalent Continuous Dose Rate BED (Gy)');
+                'Equivalent Continuous Dose Rate BED (Gy)', ...
+                'type', type, 'volume', volume);
         else
             Event('Histogram not plotted as BED data does not exist');
         end
@@ -210,13 +221,17 @@ switch get(handles.hist_menu, 'Value')
                 isfield(handles.bed, 'equivdr')
            
             handles.histogram.Calculate('doseA', ...
-                struct('data', handles.bed.equivdr * 6000, 'width', ...
+                struct('data', handles.bed.equivdr * 60, 'width', ...
                 handles.dose.width), 'xlabel', ...
-                'Equivalent Continuous Dose Rate (cGy/min)');
+                'Equivalent Continuous Dose Rate (Gy/min)', ...
+                'type', type, 'volume', volume);
         else
             Event('Histogram not plotted as BED data does not exist');
         end
 end
+
+% Clear temporary variables
+clear type volume s modes s;
 
 % Log completion
 Event(sprintf('Plot updated successfully in %0.3f seconds', toc));

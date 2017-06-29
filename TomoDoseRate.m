@@ -22,7 +22,7 @@ function varargout = TomoDoseRate(varargin)
 
 % Edit the above text to modify the response to help TomoDoseRate
 
-% Last Modified by GUIDE v2.5 20-Jun-2017 13:13:13
+% Last Modified by GUIDE v2.5 28-Jun-2017 09:50:53
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -120,9 +120,18 @@ set(handles.model_menu, 'String', options);
 options = UpdateDoseDisplay();
 set(handles.tcs_menu, 'String', options);
 
-% Set results plot options
+% Set histogram plot options
 options = UpdateHistogram();
 set(handles.hist_menu, 'String', options);
+
+% Set histogram modes
+options = {
+    'Cumulative-Relative'
+    'Cumulative-Absolute'
+    'Differential-Relative'
+    'Differential-Absolute'
+};
+set(handles.histview_menu, 'String', options);
 
 % Set dose calculator options
 options = {'Standalone GPU Calculator'};
@@ -204,6 +213,30 @@ guidata(hObject, handles);
 function hist_menu_CreateFcn(hObject, ~, ~)
 % hObject    handle to hist_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Popupmenu controls usually have a white background on Windows.
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function histview_menu_Callback(hObject, ~, handles)
+% hObject    handle to histview_menu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Execute UpdateHistogram
+handles = UpdateHistogram(handles);
+  
+% Update handles structure
+guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function histview_menu_CreateFcn(hObject, ~, ~)
+% hObject    handle to histview_menu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
 % Popupmenu controls usually have a white background on Windows.
@@ -634,7 +667,6 @@ function exportdicom_button_Callback(hObject, eventdata, handles)
 % hObject    handle to exportdicom_button (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function params_table_CellEditCallback(hObject, ~, handles)
