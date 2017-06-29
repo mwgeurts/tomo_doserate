@@ -44,6 +44,6 @@ set(handles.plan_menu, 'Enable', 'off');
 set(handles.combine_button, 'Enable', 'off');
 set(handles.loadmat_button, 'Enable', 'off');
 
-% Also execute ClearDoseRateData
-handles = ClearDoseRateData(handles);
+% Also execute ClearPlanData()
+handles = ClearPlanData(handles);
 

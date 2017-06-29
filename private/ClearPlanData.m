@@ -1,5 +1,5 @@
-function handles = ClearDoseRateData(handles)
-% ClearDoseRateData is called by TomoDoseRate when a new plan is selected
+function handles = ClearPlanData(handles)
+% ClearPlanData is called by TomoDoseRate when a new plan is selected
 % and if the user presses "Clear All" to clear all dose rate and BED
 % related variables.
 %
@@ -67,6 +67,7 @@ set(handles.tcs_menu, 'Value', 1);
 set(handles.tcs_menu, 'Enable', 'off');
 set(handles.hist_menu, 'Value', 1);
 set(handles.hist_menu, 'Enable', 'off');
+set(handles.histview_menu, 'Enable', 'off');
 
 % Reset plan info table
 set(handles.plan_table, 'Data', cell(12,2));
