@@ -21,8 +21,8 @@ function handles = SelectPlan(handles, value)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
-% Clear dose rate data
-handles = ClearDoseRateData(handles);
+% Clear existing plan data
+handles = ClearPlanData(handles);
 
 % Start waitbar
 progress = waitbar(0, 'Loading CT Image');
@@ -104,6 +104,7 @@ end
 % Set histogram menu to planned DVH
 set(handles.hist_menu, 'Value', 2);
 set(handles.hist_menu, 'Enable', 'on');
+set(handles.histview_menu, 'Enable', 'on');
 set(handles.struct_table, 'Enable', 'on');
 
 % Update DVH plot
