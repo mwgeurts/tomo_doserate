@@ -592,6 +592,24 @@ handles.rate = CalcDoseRate('image', handles.image, 'plan', ...
     handles.config.MODEL_PATH, 'downsample', ...
     handles.config.DOWNSAMPLE_FACTOR);
 
+% If auto-save is enabled
+if handles.config.AUTO_SAVE
+   
+    % Log action
+    Event(['Auto-saving dose rate results to ', ...
+        handles.config.AUTO_SAVE_LOCATION]);
+    
+    % Store rate variable separately
+    rate = handles.rate; %#ok<NASGU>
+    
+    % Save it
+    save(handles.config.AUTO_SAVE_LOCATION, 'rate', '-mat', ...
+        '-nocompression', '-v7.3');
+    
+    % Clear it
+    clear rate;
+end
+
 % Execute UpdatePlanTable
 handles = UpdatePlanTable(handles);
 

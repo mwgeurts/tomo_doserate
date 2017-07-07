@@ -99,6 +99,16 @@ else
     Event('Structure based BED threshold disabled');
 end
 
+% Check for auto save
+if isfield(config, 'AUTO_SAVE') && ...
+        strcmp(config.AUTO_SAVE, '1')
+    config.AUTO_SAVE = true;
+    Event('Dose rate auto-save enabled');
+else
+    config.AUTO_SAVE = false;
+    Event('Dose rate auto-save disabled');
+end
+
 % Check for accumulation threshold
 if isfield(config, 'DOSE_ACCUM_THRESHOLD_GY')
     config.DOSE_ACCUM_THRESHOLD_GY = ...
