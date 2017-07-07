@@ -134,9 +134,6 @@ end
 % Store the per fraction scale
 rate.scale = plan.scale / plan.fractions;
 
-% Store the threshold as an absolute dose, using the scale
-thresh = rate.threshold * rate.scale;
-
 % Verify mask size equals the image size
 if ~isequal(size(image.data), size(rate.mask))
 
@@ -215,17 +212,17 @@ end
 % for each masked voxel
 d = CalcDose(image, modplan, 'modelfolder', modelfolder, ...
     'downsample', downsample);
-dose = reshape(d.data .* rate.mask / plan.fractions, 1, []);
+dose = reshape(d.data .* rate.mask / plan.fractions, 1, []) ./ rate.scale;
 
 % Store cumulative dose as calculated
 cdose = d.data;
 
 % Store previous dose as calculated minus values less than the threshold
 pdose = dose;
-pdose(dose <= thresh) = 0;
+pdose(dose <= rate.threshold) = 0;
 
 % Store dose rates greater than the threshold
-rate.sparse(dose > thresh, 1) = dose(dose > thresh);
+rate.sparse(dose > rate.threshold, 1) = dose(dose > rate.threshold);
 
 % Loop through remainder of sinogram
 for i = 2:n
@@ -256,15 +253,15 @@ for i = 2:n
     
     % Compute new dose as the masked cumulative fraction dose up to this
     % projection
-    dose = reshape(cdose .* rate.mask / plan.fractions, 1, []);
+    dose = reshape(cdose .* rate.mask / (plan.fractions * rate.scale), 1, []);
     
     % Store dose differences (relative to previous dose) greater than 
     % threshold
-    rate.sparse((dose - pdose) > thresh, i + find(i <= l, 1) - 1) = ...
-        dose((dose - pdose) > thresh) - pdose((dose - pdose) > thresh);
+    rate.sparse((dose - pdose) > rate.threshold, i + find(i <= l, 1) - 1) = ...
+        dose((dose - pdose) > rate.threshold) - pdose((dose - pdose) > rate.threshold);
     
     % Update previous dose
-    pdose((dose - pdose) > thresh) = dose((dose - pdose) > thresh);
+    pdose((dose - pdose) > rate.threshold) = dose((dose - pdose) > rate.threshold);
 end
 
 % Compute the RMS error
@@ -276,9 +273,6 @@ end
 % Compute the average dose rate using cumulative dose
 rate.average = reshape(dose, size(image.data,1), ...
     size(image.data, 2), size(image.data,3)) ./ (n * rate.scale);
-
-% Divide the dose values by time to compute rate
-rate.sparse = rate.sparse ./ rate.scale;
 
 % Compute the maximum dose rates
 Event('Computing maximum dose rates');
